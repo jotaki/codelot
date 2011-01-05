@@ -1,0 +1,195 @@
+:block=
+: Script: minimal.scr
+: Maintainer: Joseph K. <zer0python@gmail.com>
+: Last Modified: Apr 02, 2006
+: $Id: minimal.scr,v 0.2c 2006/03/31 da4c5c Exp $
+: $Info: Minimal script for peltbot $
+:=block
+
+: These first couple of lines are pretty important, that shold be standard
+: for any script you make.
+
+if(script_minimal, exit);
+ifnot(libvar, script("lib/var.scr"));
+
+: You should set this variable to the version of your script.
+setvar(script_minimal, "Minimal Script v0.2b");
+
+: Settings (for basic understanding, I guess..)
+
+ifnot(autojoin, "setvar(autojoin, #perlcode)");
+
+: Our we registed with nickserv? if so identify.
+if(ircpass, addhandler(001, PRIVMSG NickServ :IDENTIFY $^ircpass^));
+if(ircpass, addhandler(002, -ircpass));
+
+: Channel Op commands.. (Operator-Bot)
+
+: The basics
+admalias(mode, "MODE $-");
+admalias(op, ~mode $C +ooo ${}-);
+admalias(deop, ~mode $C -ooo ${}-);
+admalias(voice, ~mode $C +vvv ${}-);
+admalias(devoice, ~mode $C -vvv ${}-);
+
+: these are useless on freenode.
+admalias(halfop, ~mode $C +hhh ${}-);
+admalias(dehalfop, ~mode $C -hhh ${}-);
+
+: The topic.
+: set the topic of the current channel.
+admalias(topic, "TOPIC $C :$-");
+: set the topic of a specified channel (perhaps from a query window.)
+admalias(topic2, "TOPIC $1 :$2-");
+: append to the topic.
+admalias(topic3, "TOPIC $C :$topic $-");
+
+: Tyrant handling (bans, kicks, removes..)
+
+: Ban a user.
+admalias(ban, ~mode $C +bbb $-);
+
+: This'll hook the IRC reply 311, the data will be stored in the var 311 :-)
+hook(311);
+
+: This is fun, this will hook 318, when 318 is grabbed, It'll do what the code
+: Says to do.
+admalias(ban2, WHOIS $1, ~wait 318, "MODE $C +b *!*@*$^311_5^*");
+
+: Need this of course.
+admalias(unban, ~mode $C -bbb $-);
+
+: Remove a user from the channel (either forcefully, or quietly ;-))
+admalias(kick, "KICK $C $1 :\"$2-\" ($N)");
+admalias(remove, "REMOVE $C $1 :$2-");
+
+: Get rid of the user for good.
+admalias(kickban, ~kick, ~ban *$1*@*!*);
+admalias(removeban, ~remove, ~ban *$1*@*);
+
+: Channel handling ;p (join, part, ...)
+
+admalias(join, "JOIN $-");
+admalias(part, "PART $-");
+
+: Cycle the current channel.
+admalias(cycle, PART $C :cycling, JOIN $C);
+admalias(cycle2, ~part, ~join);
+
+: Hop to another channel
+admalias(hop, PART $C :Hopping, JOIN $1);
+
+: To shutdown the bot of course...
+admalias(quit, "QUIT $-");
+admalias(die, ~quit);
+admalias(exit, ~quit);
+
+: Messaging ... (but of course ;p)
+admalias(msg, "PRIVMSG $1 :$2-");
+admalias(notice, "NOTICE $1 :$2-");
+
+: And last but not least.. the other basic requirements of an IRC Bot..
+admalias(raw, "$-");
+admalias(quote, ~raw);
+admalias(nick, "NICK $-");
+
+: Ok, time for some user commands...
+
+: echo xD (I dont know why, but I think most people look forward to a command
+: like this being in an IRC bot..)
+addalias(echo, "PRIVMSG $C :$-");
+addalias(say, ~echo);
+
+: Action text
+addalias(action, "PRIVMSG $C :%1ACTION $-%1");
+addalias(me, ~action);
+
+: Some other fun stuff.
+
+: The uptime of the bot.
+addalias(uptime, "PRIVMSG $C :$uptime");
+
+: The version (As said before, not updated.. so)
+addalias(version, "PRIVMSG $C :$V");
+
+: The time anyone?
+addalias(time, "PRIVMSG $C :$T");
+
+: The famous trout
+addalias(trout, ~me smacks ${} around a bit with a large trout.);
+
+: We need a welcome xD
+addalias(welcome, ~me welcomes ${} with a great big hug.);
+
+: The disabled commands (remember, the admin command db, and user command db
+: are two different db's, so you'll need one for each.)
+addalias(disabled, "PRIVMSG $C :The command \"$0\" is disabled.");
+admalias(disabled, "PRIVMSG $C :The command \"$0\" is disabled.");
+
+: It's time for some handlers, and CTCP's :-)
+
+: This is the most important handler of them all, you can scratch this whole
+: file, and start from scratch if you'd like.. but be sure to add this one
+: EXTREMELY _IMPORTANT_ handler.
+addhandler(PING, PONG :$1);
+
+: Our auto-join; Both of these should be here, since we dont know if the server
+: has a motd, or doesn't.
+
+: End Of Motd join
+addhandler(376, "JOIN $^autojoin^");
+
+: Motd file is missing join..
+addhandler(422, "JOIN $^autojoin^");
+
+: CTCP's ... but of course ;p
+addctcp(PING, NOTICE $N :$3);
+addctcp(VERSION, NOTICE $N :%1VERSION PeltBot%1);
+addctcp(TIME, NOTICE $N :%1TIME $T%1);
+
+: Some fun things.. (That you'll probably enjoy.)
+
+addalias(rot13, eval("ForFun.rot13(\"$-\")"), PRIVMSG $C :$eval);
+addalias(md5sum, eval("ForFun.md5sum(\"$-\")"), PRIVMSG $C :$eval);
+addalias(aspell, eval("ForFun.spell_it(\"$-\")"), PRIVMSG $C :$eval);
+addalias(weather, eval("ForFun.get_weather(\"$-\")"), PRIVMSG $C :$eval);
+
+: This one is one of my fave's :P
+addalias(remind, eval("Reminder.Reminder(sock, \"$C\", \"$N\", \"$1\", \"$2\")"), PRIVMSG $C :Reminder Set.);
+
+: This next thing is very important too, and is probably good practice to add
+: to all your scripts.
+
+:unload=
+
+: the cleanup process...
+
+: Ok, here again, is good practice.. Why should you cleanup something that you
+: never put there in the first place?
+ifnot(script_minimal, exit);
+
+: Clear variable(s)
+clrvar(autojoin);
+
+: Drop handlers / ctcp's / hooks
+unhook(311);
+delhandler(PING, 376, 422);
+delctcp(PING, VERSION, TIME);
+delalias(remind, weather, aspell, md5sum, rot13);
+delalias(disabled);
+delalias(welcome, trout);
+delalias(time, version, uptime);
+delalias(me, action, say, echo, msg, notice);
+delalias(raw, quote);
+delalias(quit, die, exit);
+delalias(hop, cycle, cycle2, join, part);
+delalias(removeban, kickban, remove, ban, ban2);
+delalias(ban, unban);
+delalias(topic3, topic2, topic);
+delalias(halfop, dehalfop, devoice, voice, deop, op, mode);
+
+: This next one should be your last line, in any script really.
+
+clrvar(script_minimal);
+
+: And thats it..

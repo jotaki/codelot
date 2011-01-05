@@ -1,0 +1,14 @@
+:block=
+: Script: default.scr
+: $Info: Script that is loaded at bot startup.
+:=block
+
+script("lib/var.scr");
+
+setvar(autojoin, "");
+setvar(botpass, "");
+setvar(botusers, "");
+setvar(nickpass, "");
+
+script("lib/users.scr");
+script("scripts/minimal.scr");

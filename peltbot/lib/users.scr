@@ -1,0 +1,29 @@
+:block=
+: Script: users.scr
+: Maintainer: Joseph K. <zer0python@gmail.com>
+: Last Modified: Mar 31, 2006
+: $Id: users.scr,v 0.1 2006/03/31 fa9c75d Exp $
+: $Info: User system for peltbot.
+:=block
+
+if(libusers, exit);
+ifnot(libvar, script("lib/var.scr"));
+
+setvar(libusers, "User system v0.1");
+
+ifnot(botpass, setvar(botpass, "change_me_:("));
+ifnot(botusers, setvar(botusers, "OOGAPAGOOGOO!!"));
+eval("self.user_sys.config()");
+
+clrvar(botpass, botusers);
+
+addalias(passwd, eval("self.user_sys.add(\"$N\", \"$1\")"), NOTICE $N :$eval);
+addalias(login, eval("self.user_sys.add_(\"$N\", \"${}-\")"), _NOTHING_);
+
+admalias(logout, eval("self.user_sys.pop(\"${}-\")"), _NOTHING_);
+admalias(lstusers, eval("self.user_sys.get()"), PRIVMSG $C :$eval);
+
+:unload=
+
+: Normally there would be cleanup code here, but in order for the bot to
+: function we probably dont want to remove any of the added things above.

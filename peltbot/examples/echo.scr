@@ -1,0 +1,28 @@
+:block=
+: Script: echo.scr
+: Maintainer: Joseph K. <zer0python@gmail.com>
+: Last Modified: Mar 31, 2006
+: $Id: echo.scr,v 0.1 2006/03/31 eb9d5a Exp $
+: $Info: Annoying Echo Script.
+:=block
+
+: This is good practice right here :-P
+if(script_echo, exit);
+
+ifnot(libvar, script("lib/var.scr"));
+setvar(script_echo, "Echo Script v0.1");
+
+: Setup a PRIVMSG handler
+addhandler(PRIVMSG, "PRIVMSG $2 :$N said \"$3\"");
+
+:unload=
+: Clean up stuff.
+
+: good practice ;-)
+ifnot(script_echo, exit);
+
+: Remove handler
+delhandler(PRIVMSG);
+
+: And delete our mark.
+clrvar(script_echo);

@@ -1,0 +1,122 @@
+Welcome to "Scripting for peltbot 101", I'm not much a document-writer, nor am
+I a major in english, so I warn you now! ;-P
+
+Their are only a very few minimilist installed commands inside peltbot, they
+are the following:
+
+	1. admalias
+	2. addalias
+	3. delalias
+	4. addhandler <script only>
+	5. delhandler <script only>
+	6. addctcp <script only>
+	7. delctcp <script only>
+	8. script
+	9. import <script only>
+	10. unload <irc only>
+	11. passwd <irc only>
+	12. adduser <irc only>
+	13. deluser <irc only>
+	14. lstusers <irc only>
+	15. Whatever admalias()'s/addalias()'s you put it in..
+
+and that is it, Now, lets cover some veriables... (this is gonna be rough :P).
+
+	$_ = the bot's nickname.
+	$^variable^ = variable (explained later.)
+	$N[-] = N'th arg, the hyphen `-', means to continue to the end.
+	${} = $1, if there is an arg, or $N, if there isn't
+	${}- = $1-, if there is an arg, or $N, if there isn't
+	$eval = return of eval() (explained later.)
+	$C = Channel / Response To
+	$V = Version (not really updated, so dont count on it.)
+	$DB = In Debug Mode?
+	%1 = chr(1)
+	$T = Date/Time
+	$N = nick
+	$U = user
+	$H = host
+	$uptime = the bot's uptime
+	$topic = the channel's topic
+	- And I think that's it for now.
+
+Ok, lets start on the fun stuff.. You add a command (alias), by using
+addalias(), if for some reason, you wouldn't want just anyone using the
+alias you are about to create, you would use admalias, a good example of
+this would be the alias op(), the available syntax of these commands are:
+
+ad*alias(<alias name>, <command1>, <command2>, ..., <commandN>);
+ad*alias(<alias name>, ~<other alias>, ...);
+ad*alias(<alias name>, eval(<python function>), <command1>, ..., <commandN>);
+
+The eval(), is perhaps the most powerful tool, available in peltbot's
+scripting language, since it allows for direct access to code, meaning
+it'll allows to extend w/ out having to do to much work on my end :-P (I'm
+lazy yeah.) -- Anywho, when you use the eval() feature, a new variable is
+created, with the return value of eval(). It's called $eval. Note: eval()
+can only be used from a script file, for security reasons.
+
+Now, delalias(), will delete from both admalias(), and addalias(), it's syntax
+is as follows:
+
+delalias(<alias1>, <alias2>, <alias3>, ..., <aliasN>);
+
+addhandler, add's an IRC reply handler, basically:
+
+addhandler(PING, PONG :$1);
+addhandler(376, JOIN #myfavechan);
+
+Now, obviously, if we have an addhandler() we _must_ have a delhandler()..
+which is basically the exact same thing as delalias(), except for handlers.
+
+addctcp(), Ah.. this is really the big thing with adding handlers isn't it?,
+I mean really.. Anywho, this will hook a certain ctcp call, some examples are:
+
+addctcp(PING, NOTICE $N :$3);
+addctcp(VERSION, NOTICE $N :%1VERSION A Version request How dare!??! :O%1);
+addctcp(TIME, NOTICE $N :%1TIME $T%1);
+
+and of course, delctcp(), which takes the same syntax as the other del*()'s..
+
+script(), ah the almighty script command, basically we read in a file, and
+parse it..
+
+import(), Just like script(), except it takes .tar archives instead.
+
+unload(), Ok... well, it's a script-based bot really, and suppose we want to
+make a script that'll do some things when we've loaded it, but when we dont
+want it no more.. what are we suppose to clean up after it, or should the
+script supply a special section that'll run when we call unload() on it..
+well, that's basically what it does, the example echo.scr (below), is a
+perfect example, as to why you would want an unloadable-script..
+
+-------------------------------------------------------------------------------
+: echo.scr
+: Annoying echo script. (For demonstration only, and should probably not
+: Be used in any real chat channel.)
+: Btw, a line _beginning_ with `:', denotes the line is to be ommitted.
+
+: Add a PRIVMSG Handler.
+addhandler(PRIVMSG, PRIVMSG $2 :$N say \"$3\");
+
+: This next line denotes, that the next half of the file should only be
+: called when we go to unload.
+
+:unload=
+: ^ simple eh? :P
+
+delhandler(PRIVMSG);
+-------------------------------------------------------------------------------
+
+passwd(), is the command used to identify to the bot.. it's actually quite
+simple, just type passwd(<insert password here>), and blam.. you can now use
+all commands that were added with the admalias() command.
+
+adduser(), deluser(), lstusers(), all these commands are pretty self
+explanitory, so I wont bother going into them..
+
+Please see minimal.scr, for a good example on scripting, also, explains
+$^variable^.
+
+Some other notes:
+	The script file that gets loaded automatically at bot loadup is default.scr

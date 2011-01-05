@@ -1,0 +1,21 @@
+:block=
+: Script: var.scr
+: Maintainer: Joseph K. <zer0python@gmail.com>
+: Last Modified: Mar 31, 2006
+: $Id: var.scr,v 0.1 2006/03/31 9d7ed Exp $
+: $Info: Variable Script (Frontend to the variable system?!?)
+:=block
+
+if(libvar, exit);
+
+addalias(setvar, eval("self.varkeep.set(\"$1\", \"$2\")"), _NOTHING_);
+addalias(getvar, PRIVMSG $C :$^$1^);
+addalias(clrvar, eval("self.varkeep.pop(\"$1\")"), _NOTHING_);
+
+: Normally we'd want this next line at the top.
+setvar(libvar, "Variable Lib/Script v0.1");
+
+:unload=
+
+: We actually dont want to unload this stuff, as it's very important to the
+: bot to have them.

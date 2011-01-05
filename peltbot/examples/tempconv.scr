@@ -1,0 +1,20 @@
+:block=
+: Script: tempconv.scr
+: $Info: Convert Tempetures from Farenheit To Celsius, and vice versa.
+:=block
+
+if(script_tempconv, exit);
+ifnot(libvar, script("lib/var.scr"));
+
+setvar(script_tempconv, "Tempeture Conversion 1");
+
+addalias(f2c, eval("ForFun.pyscript(\"TempConv\").f2c(\"$1\")"), PRIVMSG $C :$eval);
+addalias(c2f, eval("ForFun.pyscript(\"TempConv\").c2f(\"$1\")"), PRIVMSG $C :$eval);
+
+:unload=
+
+ifnot(script_tempconv, exit);
+
+delalias(f2c, c2f);
+
+clrvar(script_tempconv);
