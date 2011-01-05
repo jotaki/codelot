@@ -1,0 +1,6 @@
+The vision I have when ncdplay is complete is to have an ncurses-based cd-
+player, that will (of course) play cd's, lookup the information on the cd
+you are currently playing via CDDB. Have Shuffle, Shuffle Repeat, Repeat, Re-
+peat All, Programming (ie: you want track #5 to play as #1), Have easy to
+navigate menu's, hot keys, (programmable?), and other features that I probably
+didn't think of at the time of writing this file.

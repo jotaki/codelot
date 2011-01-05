@@ -1,0 +1,17 @@
+           ncdplay - an ncurses implementation of a cdplayer
+           =================================================
+
+Why?
+====
+
+The reason why I decided to make ncdplay was simple, the only decent command
+line cd player at the time was. Well, I couldn't find any that were decent,
+enough to even be considered `decent'; Most of them just flat out sucked, so
+I was left with a few choices. One choice, was to deal with it; personally I
+dont like having to deal with things if it is in my power to change them. Opt-
+ion two, was deal with the X cd players, while this worked fine for good major-
+ity of the time, some of the better X cd players sometimes gave me trouble, for
+this reason, I chose option number three. Which of course was to create my own
+console cd player.
+
+Please read the VISION file for more information.

@@ -1,0 +1,75 @@
+--- cdrom.c	2006-03-03 14:02:41.000000000 -0500
++++ cdrom.c.new	2006-05-18 21:23:25.000000000 -0400
+@@ -87,7 +87,7 @@
+ 
+ 	unsigned long tmp = (unsigned long) ngdp->playlist;
+ 
+-	win_ncd_del(ngdp->playlist);
++	win_ncd_del(&ngdp->playlist);
+ 	ngdp->playlist = win_ncd_new(ngdp->win_info.pl_height,
+ 		ngdp->win_info.pl_width, 0, (COLS / 4) + 10);
+ 
+--- gui.c	2006-05-18 21:15:12.000000000 -0400
++++ gui.c.new	2006-05-18 21:23:49.000000000 -0400
+@@ -78,12 +78,13 @@
+  *
+  * @param win:	The window to be deleted (destroyed).
+  */
+-void win_ncd_del(WINDOW *win)
++void win_ncd_del(WINDOW **win)
+ {
+ 	if(win) {
+-		wborder(win, 32, 32, 32, 32, 32, 32, 32, 32);
+-		wrefresh(win);
+-		delwin(win);
++		wborder(*win, 32, 32, 32, 32, 32, 32, 32, 32);
++		wrefresh(*win);
++		delwin(*win);
++		*win = NULL;
+ 	}
+ }
+ 
+@@ -382,7 +383,7 @@
+ 		return;	/* probably should resetup the data, and so on.. but like I said
+ 		         * this `should' never really happen */
+ 
+-	win_ncd_del(ngdp->playlist);
++	win_ncd_del(&ngdp->playlist);
+ 	ngdp->playlist = win_ncd_new(ngdp->win_info.pl_height,
+ 		ngdp->win_info.pl_width, 0, (COLS / 4) + 10);
+ 
+@@ -417,7 +418,7 @@
+ 	int max = COLS - 18;
+ 	va_list ap;
+ 
+-	win_ncd_del(status);
++	win_ncd_del(&status);
+ 	status = ncd_glob_d.status = win_ncd_new(3, COLS - 7, LINES - 4, 3);
+ 
+ 	wmove(status, 1, 2);
+--- ncdplay.h	2006-03-03 14:03:36.000000000 -0500
++++ ncdplay.h.new	2006-05-18 21:23:59.000000000 -0400
+@@ -110,7 +110,7 @@
+ /* functions that can be found in gui.c */
+ void init_ncd_colors(void);
+ WINDOW *win_ncd_new(int height, int width, int y, int x);
+-void win_ncd_del(WINDOW *win);
++void win_ncd_del(WINDOW **win);
+ void ncd_loop(void);
+ void draw_strings(void);
+ void ncd_add_to_list(int track, const char *fmt, ...);
+--- ncdplay.c	2006-05-18 21:29:39.000000000 -0400
++++ ncdplay.c.new	2006-05-18 21:29:53.000000000 -0400
+@@ -111,9 +111,9 @@
+ 	ngdp->loop = 1;
+ 	ncd_loop();	/* this is the loop (found in gui.c) */
+ 
+-	win_ncd_del(ngdp->playlist);
+-	win_ncd_del(ngdp->controls);
+-	win_ncd_del(ngdp->status);
++	win_ncd_del(&ngdp->playlist);
++	win_ncd_del(&ngdp->controls);
++	win_ncd_del(&ngdp->status);
+ 
+ 	if(ngdp->cdrom_info.disk)
+ 		cddb_disc_destroy(ngdp->cdrom_info.disk);

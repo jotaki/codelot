@@ -1,0 +1,6 @@
+Known bugs:
+
+	Sometimes after the application has been open for a while, it will segfault.
+I don't know why this is, and I'll get to fixing it when I can.
+
+	Um.. I think that's all I know about right now.

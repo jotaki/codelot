@@ -1,0 +1,12 @@
+just run:
+	gunzip -c ncdplay-<version>.tar.gz | tar xvf -
+	cd ncdplay-<version>
+	make
+	su -c 'make install'
+
+if you have any problems you can either email me (zer0python(at)gmail(dot)com),
+or contact me on IRC, on irc.freenode.net, channel #peltkore.
+
+	The default install location is /usr/local/bin, and the manpage is
+/usr/local/share/man, you can change this by editing the Makefile's in src/,
+and doc/
