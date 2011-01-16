@@ -1,3 +1,7 @@
+/*
+ * Compile with gcc -W -Wall -s -O2 -pedantic -std=c99 -o aop aop.c -lm -lao
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +25,9 @@ float convert_note(int interval, int octave)
 	if(octave > 1)
 		s = 55.00 * (2 * octave);
 
+	/*
+	 * needs to be fixed...
+	 */
 	return s * powf(2, ((float)interval / 12));
 }
 
@@ -39,7 +46,7 @@ float note2freq(const char *note)
 		0x2346,	/* F# */ 0x0047, /* G */ 0x2347, /* G# */
 	};
 
-	memcpy((void *) &n, (const void *) note, sizeof(n));
+	memcpy(&n, note, sizeof(n));
 
 	octave = (n & 0xff) - 0x30;
 	pitch  = (n & 0x00ffff00) >> 8;
@@ -53,7 +60,14 @@ float note2freq(const char *note)
 	return convert_note(0, 0);
 }
 
-
+/*
+ * == Parameters:
+ *	+note+::	Note to be passed to note2freq()
+ *	+device+::	Device to output audio to.
+ *	+format+::	Output format.
+ *	+buffer+::	Buffer to place audio data into.
+ *	+buf_size+::	Size of buffer.
+ */	
 int play_note(const char *note, ao_device *device, ao_sample_format *format,
 		char *buffer, int buf_size)
 {
@@ -61,17 +75,23 @@ int play_note(const char *note, ao_device *device, ao_sample_format *format,
 	int i, sample;
 
 	freq = note2freq(note);
-	for(i = 0; i < format->rate; ++i) {
-		sample = (int)(24576.0 *
-					sin(2*M_PI*freq * ((float)i/format->rate)));
+	printf("Playing freq: %f\n", freq);
 
-		memcpy(&buffer[4*i], (const void *) &sample, sizeof(sample));
+	for(i = 0; i < format->rate; ++i) {
+		sample = (int)(24576.0 * sin(2*M_PI*freq *
+					((float)i/format->rate)));
+
+		memcpy(&buffer[4*i], &sample, sizeof(sample));
 	}
 
 	return ao_play(device, buffer, buf_size);
 }
 
-
+/*
+ * Main entry point...
+ * Example Usage:
+ *	./aop 1A# 1A 1A# 1A ...
+ */
 int main(int argc, char *argv[])
 {
 	ao_device *device;
