@@ -1,4 +1,7 @@
 /*
+ * linkage:
+ *	http://www.techlib.com/reference/musical_note_frequencies.htm
+ *
  * Compile with gcc -W -Wall -s -O2 -pedantic -std=c99 -o aop aop.c -lm -lao
  */
 
@@ -23,7 +26,8 @@ float convert_note(int interval, int octave)
 	float s = 55.00;
 
 	if(octave > 1)
-		s = 55.00 * (2 * octave);
+		while(--octave != 0)
+			s *= 2;
 
 	/*
 	 * needs to be fixed...
@@ -50,6 +54,8 @@ float note2freq(const char *note)
 
 	octave = (n & 0xff) - 0x30;
 	pitch  = (n & 0x00ffff00) >> 8;
+
+	printf("octave = %d\npitch = 0x%04x\n", octave, pitch);
 
 	for(i = 0; i < 12; ++i) {
 		if(intervals[i] == pitch)
@@ -90,7 +96,7 @@ int play_note(const char *note, ao_device *device, ao_sample_format *format,
 /*
  * Main entry point...
  * Example Usage:
- *	./aop 1A# 1A 1A# 1A ...
+ *	./aop 4C 4E 4G 4F 5A 5C 5B 5D 5F
  */
 int main(int argc, char *argv[])
 {
