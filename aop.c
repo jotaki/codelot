@@ -26,7 +26,7 @@ float convert_note(int interval, int octave)
 	float s = 55.00;
 
 	if(octave > 1)
-		s *= (1 << octave);
+		s *= (1 << (octave - 1));
 
 	/*
 	 * needs to be fixed...
