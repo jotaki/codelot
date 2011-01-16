@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
 {
 	int i;
 	char *inputs[] = { "A", "Ab", "A##", "C", "C#5", "D2" };
+	char *bad_inputs[] = { "1A", "#A1", "Zb", "-", "qwerty" };
 	float outputs[] = { 440, 415, 494, 523, 1109, 147 };
 	float freq;
 
@@ -106,6 +107,14 @@ int main(int argc, char *argv[])
 		freq = round(note2freq(inputs[i]));
 		printf("[I] \"%s\" == %f (%s)\n", inputs[i], outputs[i],
 				(freq == outputs[i]? "PASSED": "FAILED"));
+	}
+
+	for(i = 0; i < 5; ++i) {
+		freq = note2freq(bad_inputs[i]);
+		printf("[I] Processing \"%s\" -- Should Fail ... %s\n",
+				bad_inputs[i],
+				(freq == -1? "PASSED": "FAILED"));
+
 	}
 
 	return 0;
