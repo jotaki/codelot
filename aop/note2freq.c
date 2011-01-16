@@ -22,9 +22,6 @@ float convert_note(int interval, int octave)
 	if(octave > 1)
 		s *= (1 << (octave - 1));
 
-	/*
-	 * needs to be fixed...
-	 */
 	return s * powf(2, ((float)interval / 12));
 }
 
