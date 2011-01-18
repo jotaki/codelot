@@ -25,13 +25,14 @@ int play_note(const char *note, ao_device *device, ao_sample_format *format,
 	int i, sample;
 
 	freq = note2freq(note);
-	printf("Playing freq: %f\n", freq);
 
 	for(i = 0; i < format->rate; ++i) {
-		sample = (int)(24576.0 * sin(2*M_PI*freq *
-					((float)i/format->rate)));
+		
+		sample = (int)(0.75 * 32768.0 *
+			sin(M_PI * 2 * freq * ((float)i/format->rate)));
 
-		memcpy(&buffer[4*i], &sample, sizeof(sample));
+		buffer[4*i] = buffer[4*i+2] = sample & 0xff;
+		buffer[4*i+1] = buffer[4*i+3] = sample >> 8;
 	}
 
 	return ao_play(device, buffer, buf_size);

@@ -35,8 +35,6 @@ float note2freq(const char *note)
 	int interval, octave;
 	int decrease = 0, increase = 0;
 
-	test_printf(("[I] Processing input \"%s\"\n", note));
-
 	switch(toupper(*note)) {
 		case 'A': interval = 0x00; break;
 		case 'B': interval = 0x02; break;
@@ -47,8 +45,6 @@ float note2freq(const char *note)
 		case 'G': interval = 0x0a; break;
 		default: return (float) -1;
 	}
-
-	test_printf(("[I] Interval = %d\n", interval));
 
 	if(!*(++note))	/* we'll assume the 4th octave */
 		return convert_note(interval, 4);
@@ -71,17 +67,24 @@ float note2freq(const char *note)
 		test_printf(("[I] Interval = %d\n", interval));
 		note++;
 	}
+	/* ok, maybe this is ugly. */
 	note--;
 
 	octave = atoi(note);
-	if(octave == 0) octave = 4;
+	if(octave == 0)
+		octave = 4;
 
+	/* Push to A5 if G##4 was entered *
+	 * Drop to G4 if Abb5 was entered *
+	 * Do nothing if Ab# was entered */
 	octave += (increase + -decrease);
-	if(octave < 1) octave = 1;
-	if(octave > 8) octave = 8;
 
-	test_printf(("[I] Octave = %d\n", interval));
-	test_printf(("[I] convert_note(%d, %d)\n", interval, octave));
+	/* boundries */
+	if(octave < 1)
+		octave = 1;
+
+	if(octave > 8)
+		octave = 8;
 
 	return convert_note(interval, octave);
 }
