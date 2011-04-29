@@ -41,8 +41,8 @@ int main(int argc, char *argv[])
 	int result = 0;		/* return code */
 
  	signal(SIGINT, handle_signal);
-	appname = app(argv[0]);
 
+	appname = app(argv[0]);
 	if(argc != 3) {
 		usage(appname);
 		return (0);
@@ -204,6 +204,9 @@ static void handle_signal(int signo)
  */
 static char *describe(uint32_t mask)
 {
+	static char buf[32];
+	snprintf(buf, 31, "NULL (0x%08x)", mask);
+
 	switch(mask) {
 		case IN_ACCESS: return ("IN_ACCESS"); break;
 		case IN_ATTRIB: return ("IN_ATTRIB"); break;
@@ -217,7 +220,7 @@ static char *describe(uint32_t mask)
 		case IN_MOVED_FROM: return ("IN_MOVED_FROM"); break;
 		case IN_MOVED_TO: return ("IN_MOVED_TO"); break;
 		case IN_OPEN: return ("IN_OPEN"); break;
-		default: return ("NULL"); break;
+		default: return (buf); break;
 	}
 	return ("NULL");
 }
