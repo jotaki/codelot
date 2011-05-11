@@ -178,8 +178,9 @@ static int fire(struct inotify_event *ev, char *script)
 			waitpid(p, &status, 0);
 		} while(!WIFEXITED(status));
 	} else if(p == 0) {
-		/* eek, ..but I can't use malloc() since no one would be
-		 * able to clean it up. */
+		if(ev->len >= BUFSIZ)
+			ev->len = BUFSIZ - 1;
+
 		strncpy(buffer, ev->name, ev->len);
 		buffer[ev->len] = 0;
 
