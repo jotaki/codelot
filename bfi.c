@@ -106,6 +106,7 @@ char *syntax_check(FILE *fp, int allocate)
 void interpret(char *source)
 {
 	char *mem = memory;
+	int br;
 
 	while(*source) {
 		switch(*source) {
@@ -115,7 +116,21 @@ void interpret(char *source)
 			case '<': mem--; break;
 			case ',': *mem = fgetc(stdin); fflush(stdin); break;
 			case '.': fputc(*mem, stdout); fflush(stdout); break;
-			case ']': if(*mem) while(*source-- != '['); break;
+			case ']':
+				br = 0;
+				if(*mem) {
+					do {
+						if(*source == ']')
+							br++;
+
+						if(*source == '[') {
+							br--;
+							if(br == 0)
+								break;
+						}
+					} while(*source--);
+				}
+			break;
 		}
 		source++;
 	}
