@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
 	}
 
 	bmpfile_t bf;
-	bmphdr_t *hdr = &bf.file;
 	bmpinfo_t *info = &bf.info;
 
 	rgb_t *rgb = read_bmp(bmp, &bf);
@@ -49,35 +48,17 @@ int main(int argc, char *argv[])
 	fprintf(htm, "<!-- td { width: 1px; height: 1px; } --></style></head><body>");
 	fprintf(htm, "<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">");
 
-	int w, h, i = 0;
+	unsigned int w, h, i = 0;
 	char strcolor[32];
-	unsigned long color;
 
 	for(h = 0; h < info->biHeight; ++h) {
 		fprintf(htm, "<tr>");
 
-		int tdw;
 		for(w = 0; w < info->biWidth; ++w) {
-			color = mkcolor(RGB_R(&rgb, i), RGB_G(&rgb, i), RGB_B(&rgb, i), strcolor);
-			tdw = 1;
+			mkcolor(RGB_R(&rgb, i), RGB_G(&rgb, i), RGB_B(&rgb, i), strcolor);
 
-#if 0
-			while(mkcolor(RGB_R(&rgb, i+1), RGB_G(&rgb, i+1),
-					RGB_B(&rgb, i+1), NULL) == color &&
-					(w != info->biWidth - 1)) {
-				++tdw;
-				++i;
-				++w;
-			}
-
-			if(tdw > 1) {
-				fprintf(htm, "<td bgcolor=\"%s\" width=\"%dpx\" />", strcolor, tdw);
-				--w;
-			} else {
-#endif
-				fprintf(htm, "<td bgcolor=\"%s\" />", strcolor);
-				++i;
-//			}
+			fprintf(htm, "<td bgcolor=\"%s\" />", strcolor);
+			++i;
 		}
 		fprintf(htm, "</tr>");
 	}
@@ -159,21 +140,19 @@ void bmpinfo_info(bmpinfo_t *info)
 unsigned long mkcolor(int r, int g, int b, char *output)
 {
 	unsigned long rgb = (r << 16) | (g << 8) | (b);
-	char *p;
 
 	if(!output)
 		return rgb;
 
-	switch(rgb) {
-		case 0xff0000: p = "red"; break;
-		case 0x00ff00: p = "green"; break;
-		case 0x0000ff: p = "blue"; break;
-		case 0xffffff: p = "white"; break;
-		case 0x000000: p = "black"; break;
-		case 0xffff00: p = "yellow"; break;
-		case 0x00ffff: p = "cyan"; break;
-		default: p = "#%06x";
-	}
-	sprintf(output, p, rgb);
+#define hi(x)	(((x) & 0xf0) >> 4)
+#define lo(x)	((x) & 0x0f)
+
+	if((hi(r) == lo(r)) && (hi(g) == lo(g)) && (hi(b) == lo(b)))
+		sprintf(output, "#%x%x%x", lo(r), lo(g), lo(b));
+	else
+		sprintf(output, "#%06lx", rgb);
+#undef hi
+#undef lo
+
 	return rgb;
 }
