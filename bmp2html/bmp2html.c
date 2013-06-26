@@ -12,7 +12,7 @@
 rgb_t *read_bmp(FILE *bmp, bmpfile_t *file);
 void bmpinfo_file(bmphdr_t *hdr);
 void bmpinfo_info(bmpinfo_t *info);
-unsigned long mkcolor(int r, int g, int b, char *output);
+unsigned long mkcolor(rgb_t *rgb, char *output);
 
 int main(int argc, char *argv[])
 {
@@ -48,17 +48,15 @@ int main(int argc, char *argv[])
 	fprintf(htm, "<!-- td { width: 1px; height: 1px; } --></style></head><body>");
 	fprintf(htm, "<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">");
 
-	unsigned int w, h, i = 0;
+	unsigned int w, h;
 	char strcolor[32];
 
 	for(h = 0; h < info->biHeight; ++h) {
 		fprintf(htm, "<tr>");
 
-		for(w = 0; w < info->biWidth; ++w) {
-			mkcolor(RGB_R(&rgb, i), RGB_G(&rgb, i), RGB_B(&rgb, i), strcolor);
-
-			fprintf(htm, "<td bgcolor=\"%s\" />", strcolor);
-			++i;
+		for(w = info->biWidth; w > 0; --w) {
+			mkcolor(&rgb[(info->biWidth * h) + w], strcolor);
+			fprintf(htm, "<td bgcolor=%s />", strcolor);
 		}
 		fprintf(htm, "</tr>");
 	}
@@ -137,20 +135,22 @@ void bmpinfo_info(bmpinfo_t *info)
 #undef p
 }
 
-unsigned long mkcolor(int r, int g, int b, char *output)
+unsigned long mkcolor(rgb_t *rgb, char *output)
 {
-	unsigned long rgb = (r << 16) | (g << 8) | (b);
+	unsigned char r = rgb->red, g = rgb->green, b = rgb->blue;
+	unsigned long color = (r << 16) | (g << 8) | (b);
 
 	if(!output)
-		return rgb;
-#define hi_eq_lo(x)	(((((x) & 0xf0) >> 4) - ((x) & 0x0f)) == 0)
+		return color;
+
+#define hi_eq_lo(x)	(!((((x) & 0xf0) >> 4) - ((x) & 0x0f)))
 #define lo(x)	((x) & 0x0f)
 	if(hi_eq_lo(r) && hi_eq_lo(g) && hi_eq_lo(b))
 		sprintf(output, "#%x%x%x", lo(r), lo(g), lo(b));
 	else
-		sprintf(output, "#%06lx", rgb);
+		sprintf(output, "#%06lx", color);
 #undef hi_eq_lo
 #undef lo
 
-	return rgb;
+	return color;
 }
