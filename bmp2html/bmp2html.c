@@ -143,15 +143,14 @@ unsigned long mkcolor(int r, int g, int b, char *output)
 
 	if(!output)
 		return rgb;
-
-#define hi(x)	(((x) & 0xf0) >> 4)
+#define hi_eq_lo(x)	(((((x) & 0xf0) >> 4) - ((x) & 0x0f)) == 0)
 #define lo(x)	((x) & 0x0f)
-
-	if((hi(r) == lo(r)) && (hi(g) == lo(g)) && (hi(b) == lo(b)))
+	if(hi_eq_lo(r) && hi_eq_lo(g) && hi_eq_lo(b)) {
+		printf("Found one\n");
 		sprintf(output, "#%x%x%x", lo(r), lo(g), lo(b));
-	else
+	} else
 		sprintf(output, "#%06lx", rgb);
-#undef hi
+#undef hi_eq_lo
 #undef lo
 
 	return rgb;
