@@ -1,170 +1,178 @@
 /*
- * simple Brainfsck interpretter
+ * Filename: bfi.c
+ * Date: 2013-09-24
+ * Description: Very simple brainf**k interpreter.
+ * Reason: I was bored one night.
+ *
+ * Copyright? nah! feel free to do whatever you want with this code, just know
+ * if it takes over your computer and suddenly your carpet comes to life to
+ * attack you, it's not my fault.
+ *
+ * Compilation:
+ *   gcc -W -Wall -s -O2 -o bfi bfi.c -ansi -D_BSD_SOURCE -march=native
+ *   or just:
+ *   gcc -o bfi bfi.c
+ *
+ * Invocation:
+ *   ./bfi 99bottles.bf
+ *   ./bfi <your script>
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <errno.h>
 
-#define MAX_SOURCE	32767
-#define MAX_MEMORY	32767
+enum {
+	MAX_ARRAY_SIZE = 30000,
+};
 
-#define TOKEN_ERR	", Invalid token"
-#define UNBALANCED_ERR	", Unbalanced brackets"
-
-#define report_syntax_error(line, column, byte, msg) \
-	fprintf(stderr, "Syntax error on line #%d,%d : `%c'%s\n", \
-			line, column, byte, msg);
-
-static char memory[MAX_MEMORY];
-
-int filesize(FILE *fp)
+void perrorf(const char * const fmt, ...)
 {
-	int size = 0;
-	
-	/* check return value? */
-	fseek(fp, 0, SEEK_END);
-	size = (int) ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+        va_list ap;
+        int err = errno;
 
-	return size;
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt, ap);
+        va_end(ap);
+
+        fprintf(stderr, ": %s\n", strerror(err));
+        fflush(stderr);
 }
 
-char *syntax_check(FILE *fp, int allocate)
+char *read_source(const char * const filepath)
 {
-	char *source;
-	int ch, open = 0, i = 0;
-	int line = 1, col = 0;
+	char *data = NULL;
+	struct stat fileinfo;
+	int fd = -1, n, i = 0;
 
-	source = calloc(allocate, sizeof(char));
-	if(source == NULL) {
-		fprintf(stderr, "Out of memory.\n");
+	fd = open(filepath, O_RDONLY);
+	if(0 > fd) {
+		perrorf("open('%s', O_RDONLY)", filepath);
 		return NULL;
 	}
 
-	ch = fgetc(fp);
-	while(ch != EOF) {
-		switch(ch) {
-			case '#':
-				while((ch = fgetc(fp)) != '\n' && ch != EOF);
-				line++; col = 0;
-			break;
+	if(0 > fstat(fd, &fileinfo)) {
+		perrorf("fstat(%d)", fd);
+		goto finish;
+	}
 
+	data = malloc(fileinfo.st_size + 1);
+	if(data == NULL) {
+		perrorf("malloc(%lld)", fileinfo.st_size);
+		goto finish;
+	}
+	memset(data, 0, fileinfo.st_size + 1);
+
+	do {
+		n = read(fd, &data[i], fileinfo.st_size - i);
+		if(0 > n) {
+			perrorf("read(%d, %p, %lld)",
+					fd, &data[i],
+					fileinfo.st_size - i);
+			free(data);
+			data = NULL;
+			goto finish;
+		}
+		i += n;
+	} while(i != fileinfo.st_size);
+
+finish:
+	if(0 > fd)
+		close(fd);
+
+	return data;
+}
+
+int interpret_bf(const char * const source, char * const memory)
+{
+	const char *src = source;
+	int ptr = 0, encounter = 0;
+	register int r;
+
+	while(*src) {
+		switch(*src) {
 			case '>':
+				++ptr;
+				break;
+
 			case '<':
+				--ptr;
+				break;
+
 			case '+':
+				++memory[ptr];
+				break;
+
 			case '-':
+				--memory[ptr];
+				break;
+
 			case ',':
-			case '.':
-			case '[':
-			case ']':
-				source[i++] = ch;
-				open += (ch == '[' ? 1 :
-					 ch == ']' ? -1 : 0);
-				col++;
-			break;
-
-			case '\n':
-				line++;
-				col = 0;
-			break;
-
-			case ' ':
-			case '\t':
-				col++;
-			break;
-
-			default:
-				report_syntax_error(line, col, ch, TOKEN_ERR);
-				free(source);
-				return NULL;
-
-		}
-
-		if(open < 0) {
-			report_syntax_error(line, col, ch, UNBALANCED_ERR);
-			free(source);
-			return NULL;
-		}
-
-		ch = fgetc(fp);
-	}
-
-	if(open != 0) {
-		fprintf(stderr, "unexpected EOF on line %d, expected `]'\n",
-				line);
-		free(source);
-		return NULL;
-	}
-
-	/* one could potentially call realloc here, might be worth it
-	 * if a brainfsck file had a lot of comments. */
-	return source;
-}
-
-void interpret(char *source)
-{
-	char *mem = memory;
-	int br;
-
-	while(*source) {
-		switch(*source) {
-			case '+': (*mem)++; break;
-			case '-': (*mem)--; break;
-			case '>': mem++; break;
-			case '<': mem--; break;
-			case ',': *mem = fgetc(stdin); fflush(stdin); break;
-			case '.': fputc(*mem, stdout); fflush(stdout); break;
-			case ']':
-				br = 0;
-				if(*mem) {
-					do {
-						if(*source == ']')
-							br++;
-
-						if(*source == '[') {
-							br--;
-							if(br == 0)
-								break;
-						}
-					} while(*source--);
+				/* handle error? */
+				r = read(STDIN_FILENO, &memory[ptr], 1);
+				if(0>r) {
+					fsync(STDIN_FILENO);
 				}
-			break;
+				break;
+
+			case '.':
+				/* handle error? */
+				r = write(STDOUT_FILENO, &memory[ptr], 1);
+				if(0 > r) {
+					fsync(STDOUT_FILENO);
+				}
+				break;
+
+			case ']':
+				encounter = 0;
+				if(memory[ptr]) {
+					do {
+						if(*src == ']') {
+							++encounter;
+						} else if(*src == '[') {
+							--encounter;
+						}
+						--src;
+					} while(encounter != 0);
+				}
+				break;
 		}
-		source++;
+		++src;
 	}
+
+	return 0;
 }
-	
+
 int main(int argc, char *argv[])
 {
-	FILE *fp;
-	char *buffer;
-	int size, r = 0;
+        char *source, *memory;
+        int rc = 0;
 
-	fp = fopen(argv[1], "r");
-	if(fp == NULL) {
-		fprintf(stderr, "Failed to open %s: %s\n", argv[1],
-				strerror(errno));
-		return errno;
-	}
+        if(argc < 2) {
+                printf("Usage: %s <file.bfp>\n", argv[0]);
+                exit(EXIT_FAILURE);
+        }
 
-	/* BUG: includes comments */
-	size = filesize(fp);
-	if(size > MAX_SOURCE) {
-		fprintf(stderr, "Too much source!\n");
-		fclose(fp);
-		return EFBIG;	/* File too large */
-	}
+        source = read_source(argv[1]);
+        if(source == NULL)
+                exit(EXIT_FAILURE);
 
-	buffer = syntax_check(fp, size);
-	if(buffer) {
-		memset(memory, 0, MAX_MEMORY);
-		interpret(buffer);
-		free(buffer);
-	} else
-		r = 1;
+        memory = calloc(MAX_ARRAY_SIZE, sizeof(char));
+        if(memory == NULL) {
+                perror("Out of Memory");
+                free(source);
+                exit(EXIT_FAILURE);
+        }
 
-	fclose(fp);
-	return r;
+        rc = interpret_bf(source, memory);
+
+        free(memory);
+        free(source);
+        return rc;
 }
