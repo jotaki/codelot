@@ -66,13 +66,15 @@ void readch()
 
 void tagloop(int i)
 {
-	printf(".loop%d:\n", i);
+	printf(".startloop%d:\n", i);
+	printf("cmpb $0, (%%rsi)\n");
+	printf("jz .endloop%d\n", i);
 }
 
 void jmploop(int i)
 {
-	printf("cmpb $0, (%%rsi)\n");
-	printf("jnz .loop%d\n", i);
+	printf("jmp .startloop%d\n", i);
+	printf(".endloop%d:\n", i);
 }
 
 int main()
@@ -109,17 +111,19 @@ _next:
 			case '+': op(c, 1); break;
 			case '.': printch(); break;
 			case ',': readch(); break;
-			case '[': tagloop(i); break;
-			case ']': 
+			case '[':
 				  l = 0;
 				  c = i;
 				  do {
-					  if(src[c] == ']') ++l;
-					  else if(src[c] == '[') --l;
+					  if(src[c] == '[') ++l;
+					  else if(src[c] == ']') --l;
 
-					  --c;
+					  ++c;
 				  } while(l != 0);
-				  jmploop(c+1);
+				  tagloop(c-1);
+				  break;
+			case ']':
+				  jmploop(i);
 				  break;
 		}
 	}
