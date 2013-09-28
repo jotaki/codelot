@@ -9,13 +9,73 @@
  * attack you, it's not my fault.
  *
  * Compilation:
- *   gcc -W -Wall -s -O2 -o bfi bfi.c -ansi -D_BSD_SOURCE -march=native
+ *   gcc -W -Wall -s -O2 -o bfi bfi.c -std=c99 -march=native
  *   or just:
  *   gcc -o bfi bfi.c
  *
  * Invocation:
- *   ./bfi 99bottles.bf
- *   ./bfi <your script>
+ *   $ ./bfi 99bottles.bf
+ *   $ ./bfi <your script>
+ *
+ * Testing:
+ *   $ time ./bfi long.b
+ *
+ * Notes:
+ *   compared to: http://mazonka.com/brainf/
+ *   Tested on: Intel(R) Core(TM) i5-2520M CPU @ 2.50GHz
+ *
+ *   compilation options: gcc -o <f> <f>.c
+ *   -------------------------------------
+ *   $ time cat long.b | ./bff
+ *   real	0m18.820s
+ *   user	0m18.725s
+ *   sys	0m0.088s
+ *
+ *   $ time cat long.b | ./bff4
+ *   real	0m27.354s
+ *   user	0m27.183s
+ *   sys	0m0.161s
+ *
+ *   $ time cat long.b | ./bff4lnr
+ *   real	0m7.327s
+ *   user	0m7.302s
+ *   sys	0m0.024s
+ *
+ *   $ time ./bfi long.b
+ *   real	0m19.400s
+ *   user	0m19.399s
+ *   sys	0m0.001s
+ *
+ *   compilation options: gcc -s -O2 -o <f> <f>.c -march=native
+ *   ----------------------------------------------------------
+ *   $ time cat long.b | ./bff
+ *   real	0m13.213s
+ *   user	0m13.150s
+ *   sys	0m0.060s
+ *
+ *   $ time cat long.b | ./bff4
+ *   real	0m10.003s
+ *   user	0m10.003s
+ *   sys	0m0.001s
+ *
+ *   $ time cat long.b | ./bff4lnr
+ *   real	0m2.957s
+ *   user	0m2.955s
+ *   sys	0m0.003s
+ *
+ *   $ time ./bfi long.b
+ *   real	0m10.061s
+ *   user	0m10.061s
+ *   sys	0m0.000s
+ *
+ *   compiled with: gcc -o bfi bfi.c -DCLOCK_IT
+ *   ------------------------------------------
+ *   $ ./bfi long.b 
+ *   Read source in 0ms
+ *   Compiled source in 0ms
+ *   Interpreted brainf*** in 19700ms
+ *
+ *   Maybe one day I will implement a linear optimization. :-/
  */
 
 #include <stdio.h>
@@ -28,24 +88,37 @@
 #include <unistd.h>
 #include <errno.h>
 
+#ifdef CLOCK_IT
+# include <time.h>
+#endif
+
+#define MAX(a, b)	((a) > (b)? (a): (b))
+#define MIN(a, b)	((a) < (b)? (a): (b))
+#define NOT_BF(ch) 	( \
+				((ch) != '[') && ((ch) != ']') && \
+				((ch) != '+') && ((ch) != '-') && \
+				((ch) != '<') && ((ch) != '>') && \
+				((ch) != ',') && ((ch) != '.') \
+			)
+
 enum {
 	MAX_ARRAY_SIZE = 30000,
 };
 
 void perrorf(const char * const fmt, ...)
 {
-        va_list ap;
-        int err = errno;
+	va_list ap;
+	int err = errno;
 
-        va_start(ap, fmt);
-        vfprintf(stderr, fmt, ap);
-        va_end(ap);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
 
-        fprintf(stderr, ": %s\n", strerror(err));
-        fflush(stderr);
+	fprintf(stderr, ": %s\n", strerror(err));
+	fflush(stderr);
 }
 
-char *read_source(const char * const filepath)
+char *read_source(const char * const filepath, int *size)
 {
 	char *data = NULL;
 	struct stat fileinfo;
@@ -62,6 +135,7 @@ char *read_source(const char * const filepath)
 		goto finish;
 	}
 
+	*size = fileinfo.st_size + 1;
 	data = malloc(fileinfo.st_size + 1);
 	if(data == NULL) {
 		perrorf("malloc(%lld)", fileinfo.st_size);
@@ -89,61 +163,87 @@ finish:
 	return data;
 }
 
-int interpret_bf(const char * const source, char * const memory)
+int *quick_compile(const char * const source, int *size)
 {
-	const char *src = source;
-	int ptr = 0, encounter = 0;
-	register int r;
+	int *src, *tmp, *loop, t;
+	const char *ptr;
+	char byte;
 
-	while(*src) {
-		switch(*src) {
-			case '>':
-				++ptr;
+	src = calloc(*size+1, sizeof(int));
+	if(src == NULL)
+		return NULL;
+
+	tmp = src;
+	ptr = source;
+	while(*ptr) {
+		byte = *tmp = *ptr;
+		if(NOT_BF(byte)) {
+			++ptr;
+			continue;
+		}
+
+		t = 0;
+		if(byte == ']') {
+			loop = tmp;
+			do {
+				if((*loop & 0xff) == ']')
+					++t;
+				else if((*loop & 0xff) == '[')
+					--t;
+
+				--loop;
+			} while(t != 0);
+			t = tmp-loop;
+		} else if(byte != '[') {
+			for(t = 0; *ptr == byte; ++ptr, ++t)
+				/* do nothing */ ;
+			--ptr;
+		}
+
+		*tmp++ |= (t << 8);
+		++ptr;
+	}
+	*size = tmp-src+1;
+	return src;
+}
+			
+int interpret_bf(const int * source, char * const memory)
+{
+	int ptr = 0, i, si = 0;
+
+	while(source[si]) { 
+		i = (source[si] >> 8);
+		switch((source[si] & 0xff)) {
+			case '>': 
+				ptr = MIN(MAX_ARRAY_SIZE, ptr + i);
 				break;
 
 			case '<':
-				--ptr;
+				ptr = MAX(0, ptr - i);
 				break;
 
 			case '+':
-				++memory[ptr];
+				memory[ptr] = MIN(255, memory[ptr] + i);
 				break;
 
 			case '-':
-				--memory[ptr];
-				break;
-
-			case ',':
-				/* handle error? */
-				r = read(STDIN_FILENO, &memory[ptr], 1);
-				if(0>r) {
-					fsync(STDIN_FILENO);
-				}
-				break;
-
-			case '.':
-				/* handle error? */
-				r = write(STDOUT_FILENO, &memory[ptr], 1);
-				if(0 > r) {
-					fsync(STDOUT_FILENO);
-				}
+				memory[ptr] = MAX(0, memory[ptr] - i);
 				break;
 
 			case ']':
-				encounter = 0;
-				if(memory[ptr]) {
-					do {
-						if(*src == ']') {
-							++encounter;
-						} else if(*src == '[') {
-							--encounter;
-						}
-						--src;
-					} while(encounter != 0);
-				}
+				if(memory[ptr])
+					si -= i;
 				break;
+
+			case ',':
+				memory[ptr] = fgetc(stdin);
+				break;
+
+			case '.':
+				fputc(memory[ptr], stdout);
+			  	break;
 		}
-		++src;
+		++si;
 	}
 
 	return 0;
@@ -151,28 +251,62 @@ int interpret_bf(const char * const source, char * const memory)
 
 int main(int argc, char *argv[])
 {
-        char *source, *memory;
-        int rc = 0;
+	char *source, *memory;
+	int *compiled_src, size;
+	int rc = 0;
+#ifdef CLOCK_IT
+	clock_t start, stop;
+#endif
 
-        if(argc < 2) {
-                printf("Usage: %s <file.bfp>\n", argv[0]);
-                exit(EXIT_FAILURE);
-        }
+	if(argc < 2) {
+		printf("Usage: %s <file.bfp>\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
 
-        source = read_source(argv[1]);
-        if(source == NULL)
-                exit(EXIT_FAILURE);
+#ifdef CLOCK_IT
+	start = clock();
+#endif
+	source = read_source(argv[1], &size);
+	if(source == NULL)
+		exit(EXIT_FAILURE);
 
-        memory = calloc(MAX_ARRAY_SIZE, sizeof(char));
-        if(memory == NULL) {
-                perror("Out of Memory");
-                free(source);
-                exit(EXIT_FAILURE);
-        }
+#ifdef CLOCK_IT
+	stop = clock();
+	printf("Read source in %ldms\n",
+			(long)(stop - start) * 1000 / CLOCKS_PER_SEC);
+	start = clock();
+#endif
 
-        rc = interpret_bf(source, memory);
+	compiled_src = quick_compile(source, &size);
+	if(compiled_src == NULL) {
+		free(source);
+		exit(EXIT_FAILURE);
+	}
+#ifdef CLOCK_IT
+	stop = clock();
+	printf("Compiled source in %ldms\n",
+			(long)(stop - start) * 1000 / CLOCKS_PER_SEC);
+#endif
 
-        free(memory);
-        free(source);
-        return rc;
+	free(source);
+	memory = calloc(MAX_ARRAY_SIZE, sizeof(char));
+	if(memory == NULL) {
+		perror("Out of Memory");
+		free(compiled_src);
+		exit(EXIT_FAILURE);
+	}
+
+#ifdef CLOCK_IT
+	start = clock();
+#endif
+	rc = interpret_bf(compiled_src, memory);
+#ifdef CLOCK_IT
+	stop = clock();
+	printf("Interpreted brainf*** in %ldms\n",
+			(long)(stop - start) * 1000 / CLOCKS_PER_SEC);
+#endif
+
+	free(memory);
+	free(compiled_src);
+	return rc;
 }
