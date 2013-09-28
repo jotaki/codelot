@@ -1,0 +1,14 @@
+#! /bin/sh
+# This just generates the Makefile's ;-)
+
+if [ "$2" = "" ]; then
+	echo "Not enough parameters";
+	echo "$0 <asm file> <directory>";
+	exit 1;
+fi
+
+echo -e "# not a real Makefile :)\n" >> $2/Makefile
+echo "all:" >> $2/Makefile
+echo -e "\tas -o $1.o $1.s && ld -s -o $1 $1.o && rm -rf $1.o" >> $2/Makefile
+echo "Done."
+sleep 1; clear; cat $2/Makefile
