@@ -94,4 +94,6 @@ echo movl \$1, %eax
 echo xor %ebx, %ebx
 echo int \$0x80
 echo .section .data
-echo .mem:) | as -o $file && ld $file; c=$?; rm -rf $file; exit $c
+echo .mem:
+echo .zero 30000) | as -o $file && ld $file; c=$?; rm -rf $file; exit $c
+
