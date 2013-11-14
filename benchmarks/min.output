@@ -1,0 +1,20 @@
+Verifying copy ... good
+Sorting using comparison
+Sorted 26214400 in 7250 ms
+Sorting using 'subtraction'
+Sorted 26214400 in 7420 ms
+Verifying sort ... good
+
+Verifying copy ... good
+Sorting using comparison
+Sorted 26214400 in 7190 ms
+Sorting using 'subtraction'
+Sorted 26214400 in 7390 ms
+Verifying sort ... good
+
+Verifying copy ... good
+Sorting using comparison
+Sorted 26214400 in 7160 ms
+Sorting using 'subtraction'
+Sorted 26214400 in 7380 ms
+Verifying sort ... good
