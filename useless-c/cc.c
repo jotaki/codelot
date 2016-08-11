@@ -109,7 +109,7 @@ int64_t g(int64_t n)
 
 int main()
 {
-	int64_t in, k, n;
+	int64_t in, k, n, m;
 
 	while(scanf("%" PRId64, &in) == 1) {
 		printf("f(%" PRId64 ") = %" PRId64 "; ", in, f(in));
@@ -122,5 +122,15 @@ int main()
 		printf("k = %" PRId64 "? ", fff(in));
 		printf("k = %" PRId64 "?\n", g(in));
 	}
+
+	k = m = in = 0;
+	for(n = 1; n <= 1000000; ++n) {
+		k = g(n);
+		if(k > m) {
+			m = k;
+			in = n;
+		}
+	}
+	printf("%" PRId64 " has %" PRId64 " chains.\n", in, m);
 	return 0;
 }
