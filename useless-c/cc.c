@@ -58,9 +58,9 @@ int64_t g(int64_t n)
 		return k;
 
 	while(n != 1) {
-		q = (n % 4) >> 1;
+		q = (n >> 1) & 1;
 		a = (n + 1) >> 2;
-		b = ((n - a) << 2) + 2*q;
+		b = ((n - a) << 2) | (q << 1);
 		s = __builtin_ctz(b);
 		k = 1 + k + s;
 		n = b >> s;
