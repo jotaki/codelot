@@ -100,7 +100,7 @@ inline void x_testit(const char *fn, int64_t (*p)(), int64_t max)
 	printf("Testing from %s(1) to %s(%"PRId64"):\n", fn, fn, max);
 	r = testit(p, max, &chains, &n);
 
-	printf("Took %0.2lfms to complete %"PRId64" loops.\n", r, max);
+	printf("Took %0.2lfs to complete %"PRId64" loops.\n", r, max);
 	printf("Found %"PRId64" with the longest chain count of %"PRId64"\n",
 			n, chains);
 }
