@@ -38,3 +38,25 @@ f(41)=124; G(41)=109
 27
 f(27)=82; G(27)=111
 ```
+
+*After switching from ceil() to straight bit shifting:*
+
+```
+$ ./cc
+27
+f(27)=82; G(27)=111
+0 1
+Switched to function g.
+27
+f(27)=82; g(27)=111
+-10000000
+Testing from g(1) to g(10000000):
+Took 1.91s to complete 10000000 loops.
+Found 8400511 with the longest chain count of 685
+0 0
+Switched to function G.
+-10000000
+Testing from G(1) to G(10000000):
+Took 3.65s to complete 10000000 loops.
+Found 8400511 with the longest chain count of 685
+```
