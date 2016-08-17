@@ -39,7 +39,7 @@ f(41)=124; G(41)=109
 f(27)=82; G(27)=111
 ```
 
-*After switching from ceil() to straight bit shifting:*
+**After switching from ceil() to straight bit shifting:**
 
 ```
 $ ./cc
