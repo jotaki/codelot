@@ -23,11 +23,11 @@ int main()
 {
 	int k;
 
-	for(k = 1; k <= 10000000; ++k)
+	for(k = 1; k <= 1000000000; ++k)
 		if(f3(k) != f(k) || f(k) != f2(k)) {
 			printf("%d failed.\n", k);
 			break;
 		}
 
-	return k < 10000000;
+	return k < 1000000000;
 }
