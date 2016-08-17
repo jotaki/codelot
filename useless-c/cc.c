@@ -116,6 +116,7 @@ int main()
 			scanf("%"PRId64, &in);
 			i_fn = (in & 1);
 			p = (i_fn)? g: G;
+			printf("Switched to function %s.\n", fn[i_fn]);
 			continue;
 		} else if(in < 0) {
 			x_testit(fn[i_fn], p, -in);
