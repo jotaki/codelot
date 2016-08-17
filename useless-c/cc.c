@@ -69,7 +69,7 @@ int64_t g(int64_t n)
 	return k;
 }
 
-/* wrapper test code; returns the time it took to finish in ms */
+/* wrapper test code; returns the time it took to finish in seconds */
 float testit(int64_t (*p)(), int64_t max, int64_t *p_chains, int64_t *p_n)
 {
 	int64_t i, chains = 0, n = 0, tmp;
