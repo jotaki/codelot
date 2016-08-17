@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <math.h>
-#include <sys/time.h>
+#include <time.h>
 
 #define f(n) ((int64_t)ceil((((n) & 1) + 0.5) * (n)) << ((n) & 1))
 
@@ -70,12 +70,12 @@ int64_t g(int64_t n)
 }
 
 /* wrapper test code; returns the time it took to finish in ms */
-uint64_t testit(int64_t (*p)(), int64_t max, int64_t *p_chains, int64_t *p_n)
+float testit(int64_t (*p)(), int64_t max, int64_t *p_chains, int64_t *p_n)
 {
 	int64_t i, chains = 0, n = 0, tmp;
-	struct timeval begin = {0}, end = {0};
+	clock_t begin = 0, end = 0;
 
-	gettimeofday(&begin, NULL);
+	begin = clock();
 	for(i=1; i <= max; ++i) {
 		tmp = p(i);
 		if(chains < tmp) {
@@ -83,24 +83,24 @@ uint64_t testit(int64_t (*p)(), int64_t max, int64_t *p_chains, int64_t *p_n)
 			n = i;
 		}
 	}
-	gettimeofday(&end, NULL);
+	end = clock();
 
 	if(p_chains) *p_chains = chains;
 	if(p_n) *p_n = n;
 
-	return (uint64_t) (end.tv_usec - begin.tv_usec);
+	return (float) (end - begin) / CLOCKS_PER_SEC;
 }
 
 
 inline void x_testit(const char *fn, int64_t (*p)(), int64_t max)
 {
 	int64_t chains, n;
-	uint64_t r;
+	float r;
 
 	printf("Testing from %s(1) to %s(%"PRId64"):\n", fn, fn, max);
 	r = testit(p, max, &chains, &n);
 
-	printf("Took %"PRIu64"ms to complete %"PRId64" loops.\n", r, max);
+	printf("Took %0.2lfms to complete %"PRId64" loops.\n", r, max);
 	printf("Found %"PRId64" with the longest chain count of %"PRId64"\n",
 			n, chains);
 }
