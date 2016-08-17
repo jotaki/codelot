@@ -31,7 +31,6 @@
 #include <math.h>
 #include <time.h>
 
-//#define f(n) ((int64_t)ceil((((n) & 1) + 0.5) * (n)) << ((n) & 1))
 #define f(n) (((int64_t)((n) << ((n) & 1)) - ((n) >> 1)) << ((n & 1)))
 
 /* brute force method */
