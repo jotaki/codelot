@@ -55,13 +55,17 @@ int main()
 {
 	int64_t a, b, c;
 
-	printf("^C to quit.\n");
 	signal(SIGINT, goodbye);
 
 	while(1) {
 		printf("* %%: ");
 		fflush(stdout);
-		scanf("%" PRId64 " %" PRId64, &a, &b);
+
+		if(scanf("%" PRId64 " %" PRId64, &a, &b) == EOF) {
+			printf("\nGoodbye.\n");
+			fflush(stdout);
+			break;
+		}
 
 		c = gcd(a,b);
 		if(c > 1) {
