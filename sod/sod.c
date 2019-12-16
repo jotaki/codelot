@@ -15,14 +15,14 @@ int main(int argc, char *argv[])
 		"A", "A#", "B", "C", "C#", "D",
 		"D#", "E", "F", "F#", "G", "G#",
 	};
-	const struct music_mode_s modes[] = {
-		{ "Aelion", 10662 },
-		{ "Locrian", 10857 },
-		{ "Ionian", 6810 },
-		{ "Dorian", 9894 },
-		{ "Phrygian", 10665 },
-		{ "Lydian", 6762, },
-		{ "Mixolydian", 9882 },
+	const struct music_mode_s modes[] = {	/* backwards, missing last */
+		{ "Aelion", 10662 },	/* 2212212 */
+		{ "Locrian", 10857 },	/* 2221221 */
+		{ "Ionian", 6810 },	/* 1222122 */
+		{ "Dorian", 9894 },	/* 2122212 */
+		{ "Phrygian", 10665 },	/* 2212221 */
+		{ "Lydian", 6762, },	/* 1221222 */
+		{ "Mixolydian", 9882 },	/* 2122122 */
 	};
 	int scale, mode, tmp, root;
 
