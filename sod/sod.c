@@ -24,18 +24,18 @@ int main(int argc, char *argv[])
 		{ "Lydian", 6762, },
 		{ "Mixolydian", 9882 },
 	};
-	int scale, i, tmp, root;
+	int scale, mode, tmp, root;
 
 	time(&seed);
 	srand(seed);
 
-	i = rand() % (sizeof(modes)/sizeof(modes[0]));
+	mode = rand() % (sizeof(modes)/sizeof(modes[0]));
+	root = rand() % (sizeof(chromatic)/sizeof(chromatic[0]));
 
-	scale = modes[i].mm_scale;
-	tmp = rand() % (sizeof(chromatic)/sizeof(chromatic[0]));
-	root = tmp;
+	scale = modes[mode].mm_scale;
+	tmp = root;
 
-	printf("%s %s: ", chromatic[root], modes[i].mm_mode);
+	printf("%s %s: ", chromatic[root], modes[mode].mm_mode);
 	while(scale != 0) {
 		printf("%s ", chromatic[tmp]);
 		tmp += (scale & 3);
