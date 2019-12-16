@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 		"A", "A#", "B", "C", "C#", "D",
 		"D#", "E", "F", "F#", "G", "G#",
 	};
-	const struct music_mode_s modes[] = {	/* backwards, missing last */
+	const struct music_mode_s modes[] = {	/* backwards, missing last, binary encoded */
 		{ "Aelion", 10662 },	/* 2212212 */
 		{ "Locrian", 10857 },	/* 2221221 */
 		{ "Ionian", 6810 },	/* 1222122 */
