@@ -11,11 +11,11 @@ struct music_mode_s {
 int main(int argc, char *argv[])
 {
 	time_t seed;
-	const char *scal, *chromatic[] = {
+	const char *chromatic[] = {
 		"A", "A#", "B", "C", "C#", "D",
 		"D#", "E", "F", "F#", "G", "G#",
 	};
-	struct music_mode_s modes[] = {
+	const struct music_mode_s modes[] = {
 		{ "Aelion", 10662 },
 		{ "Locrian", 10857 },
 		{ "Ionian", 6810 },
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 		tmp %= (sizeof(chromatic)/sizeof(chromatic[0]));
 		scale >>= 2;
 	}
-
 	printf("%s\n", chromatic[root]);
+
 	return 0;
 }
