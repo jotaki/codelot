@@ -1,0 +1,4 @@
+" ignore out.txt and example.input for dieharder tests.
+out.txt
+example.input
+passgen
