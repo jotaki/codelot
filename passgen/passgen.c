@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
 #include <math.h>
 
@@ -62,13 +63,30 @@ static long int prng(long int *state, int *counter_mod)
 
 int main(void)
 {
-	int i, counter = 1;
-	long int state;
+	int counter = 1;
+	long int state = 0;
+	char *seed;
+	const char letters[] = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
+				"!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
+	unsigned int i, length;
 
-	time(&state);
+	seed = getpass("Seed password: ");
+	printf("Enter length: ");
+	fflush(stdout);
 
-	for(i=0;i<=1000000;i++) {
-		printf("%10ld\n", prng(&state, &counter));
+	while(scanf("%d", &length) != 1);
+
+	srand(1218);
+	for(i = 0; i < strlen(seed); ++i) {
+		state += seed[i] + (rand() % 1987);
 	}
+
+	for(i = 0; i < length; ++i) {
+		printf("%c",
+			letters[prng(&state, &counter) % (sizeof(letters)/sizeof(letters[0]))]);
+		fflush(stdout);
+	}
+	printf("\n");
+
 	return 0;
 }
