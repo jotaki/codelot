@@ -1,7 +1,9 @@
 # A Password Generator
 
-A Password Generator, that I keep meaning to write.
-Unfortunately, after some time, I can't completely recall the formula; so I
-am uploading to github for storage.
+A password generator, in place of a password dictionary.
+Use a seed password and specify length to create a custom password for your services.
 
-Uses its own prng.
+## Potential updates
+
+add a -s option to specify an srand() value for initial state.
+add a -r option to specify a custom modulus in rand() increment.
