@@ -64,7 +64,7 @@ static long int prng(long int *state, int *counter_mod)
 int main(void)
 {
 	int counter = 1;
-	long int state = 0;
+	long int state = 0, tmp;
 	char *seed;
 	const char letters[] = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
 				"!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
@@ -79,6 +79,8 @@ int main(void)
 	srand(1218);
 	for(i = 0; i < strlen(seed); ++i) {
 		state += seed[i] + (rand() % 1987);
+		tmp = prng(&state, &counter);
+		state += tmp;
 	}
 
 	for(i = 0; i < length; ++i) {
