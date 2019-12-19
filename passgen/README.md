@@ -3,8 +3,12 @@
 A password generator, in place of a password dictionary.
 Use a seed password and specify length to create a custom password for your services.
 
-## Potential updates
+## Help output
+```bash
 
-add a -s option to specify an srand() value for initial state.
-
-add a -r option to specify a custom modulus in rand() increment.
+$ ./passgen -h
+$ ./passgen -h
+Valid options are:
+-s <seed>    -- srand() seed value.
+-m <modulus> -- modulus value.
+-h           -- shows this help.```
