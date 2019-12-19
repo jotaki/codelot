@@ -9,4 +9,5 @@ $ ./passgen -h
 Valid options are:
 -s <seed>    -- srand() seed value.
 -m <modulus> -- modulus value.
--h           -- shows this help.```
+-h           -- shows this help.
+```
