@@ -61,14 +61,47 @@ static long int prng(long int *state, int *counter_mod)
 	return *state = (*state * _mults[index]) & mask;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	int counter = 1;
+	int i, counter = 1;
 	long int state = 0, tmp;
 	char *seed;
 	const char letters[] = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
 				"!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
-	unsigned int i, length;
+	unsigned int j, length, randseed = 1218, modulus = 1987;
+
+	if(argc > 1) {
+		for(i = 1; i < argc; ++i) {
+			if(!strcmp("-s", argv[i])) {
+				if(++i > argc) {
+					printf("Need value for seed.\n");
+					return 1;
+				}
+				if(sscanf(argv[i], "%d", &randseed) != 1) {
+					printf("Invalid seed value: %s\n", argv[i]);
+					return 1;
+				}
+			}
+			else if(!strcmp("-m", argv[i])) {
+				if(++i > argc) {
+					printf("Need value for modulus.\n");
+					return 1;
+				}
+				if(sscanf(argv[i], "%d", &modulus) != 1) {
+					printf("Invalid modulus value: %s\n", argv[i]);
+					return 1;
+				}
+			}
+			else if(!strcmp("-h", argv[i])) {
+				printf("Valid options are:\n");
+				printf("-s <seed>    -- srand() seed value.\n");
+				printf("-m <modulus> -- modulus value.\n");
+				printf("\n");
+				return 0;
+			}
+		}
+	}
+
 
 	seed = getpass("Seed password: ");
 	printf("Enter length: ");
@@ -76,14 +109,14 @@ int main(void)
 
 	while(scanf("%d", &length) != 1);
 
-	srand(1218);
-	for(i = 0; i < strlen(seed); ++i) {
-		state += seed[i] + (rand() % 1987);
+	srand(randseed);
+	for(j = 0; j < strlen(seed); ++j) {
+		state += seed[j] + (rand() % modulus);
 		tmp = prng(&state, &counter);
 		state += tmp;
 	}
 
-	for(i = 0; i < length; ++i) {
+	for(j = 0; j < length; ++j) {
 		printf("%c",
 			letters[prng(&state, &counter) % (sizeof(letters)/sizeof(letters[0]))]);
 		fflush(stdout);
@@ -92,3 +125,5 @@ int main(void)
 
 	return 0;
 }
+
+
