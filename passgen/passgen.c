@@ -96,6 +96,7 @@ int main(int argc, char *argv[])
 				printf("Valid options are:\n");
 				printf("-s <seed>    -- srand() seed value.\n");
 				printf("-m <modulus> -- modulus value.\n");
+				printf("-h           -- shows this help.\n");
 				printf("\n");
 				return 0;
 			}
