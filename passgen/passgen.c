@@ -1,6 +1,11 @@
 /*
  * a simple password generator
  * don't forget: this must be rewritable/repeatable anywhere/anyhow.
+ *
+ * No warranty.
+ * Feel free to reuse this code however you wish.
+ * This code cannot be copyrighted.
+ * Written by Joseph T. Kinsella
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,5 +131,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-
