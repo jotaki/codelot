@@ -4,7 +4,6 @@
  *
  * No warranty.
  * Feel free to reuse this code however you wish.
- * This code cannot be copyrighted.
  * Written by Joseph T. Kinsella
  */
 #include <stdio.h>
