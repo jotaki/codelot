@@ -1,6 +1,7 @@
 /*
  * a simple password generator
  * don't forget: this must be rewritable/repeatable anywhere/anyhow.
+ * unfortunately, I couldn't remember it, after some time, so it's on github now.
  *
  * No warranty.
  * Feel free to reuse this code however you wish.
