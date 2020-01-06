@@ -177,6 +177,13 @@ int main(int argc, char *argv[])
 			// perhaps this variable should be called
 			// calloced_letters? *shrugs* it works.
 			using_letters = 0;
+
+			nl = strchr(letters, '\n');
+			if(nl) *nl = '\0';
+
+			nl = strchr(letters, '\r');
+			if(nl) *nl = '\0';
+
 		}
 		letters_length = strlen(letters);
 	} else if(!letters) {
