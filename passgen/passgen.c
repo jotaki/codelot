@@ -71,10 +71,14 @@ int main(int argc, char *argv[])
 	int i, counter = 1, using_letters = 0, using_quiet_letters = 0;
 	long int state = 0, tmp;
 	char *seed, *nl;	/* nl=newline */
-	char *letters = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
-                        "!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
+	char *letters;/* = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
+                        "!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?"; */
+	char lletters[] = /* legacy letters */
+		"`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
+                "!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
+
 	unsigned int j, length, randseed = 1218, modulus = 1987;
-	size_t letters_length = strlen(letters);
+	size_t letters_length = sizeof(lletters)/sizeof(lletters[0]);
 
 	if(argc > 1) {
 		for(i = 1; i < argc; ++i) {
@@ -173,6 +177,8 @@ int main(int argc, char *argv[])
 			using_letters = 0;
 		}
 		letters_length = strlen(letters);
+	} else {
+		letters = lletters;
 	}
 
 	srand(randseed);
