@@ -73,8 +73,7 @@ int main(int argc, char *argv[])
 	int i, counter = 1, using_letters = 0, using_quiet_letters = 0;
 	long int state = 0, tmp;
 	char *seed, *nl;	/* nl=newline */
-	char *letters;/* = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
-                        "!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?"; */
+	char *letters = NULL;
 	char lletters[] = /* legacy letters */
 		"`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
                 "!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
@@ -180,7 +179,7 @@ int main(int argc, char *argv[])
 			using_letters = 0;
 		}
 		letters_length = strlen(letters);
-	} else if(letters != NULL) {
+	} else if(!letters) {
 		letters = lletters;
 	}
 
