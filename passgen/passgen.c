@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
 					return 1;
 				}
 				letters = argv[i];
+				letters_length = strlen(letters);
 			}
 			else if(!strcmp("-L", argv[i])) {
 				letters = calloc(512, sizeof(char));
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
 			using_letters = 0;
 		}
 		letters_length = strlen(letters);
-	} else {
+	} else if(letters != NULL) {
 		letters = lletters;
 	}
 
