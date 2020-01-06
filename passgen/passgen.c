@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	if(argc > 1) {
 		for(i = 1; i < argc; ++i) {
 			if(!strcmp("-s", argv[i])) {
-				if(++i > argc) {
+				if(++i >= argc) {
 					printf("Need value for seed.\n");
 					return 1;
 				}
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if(!strcmp("-m", argv[i])) {
-				if(++i > argc) {
+				if(++i >= argc) {
 					printf("Need value for modulus.\n");
 					return 1;
 				}
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 				return 0;
 			}
 			else if(!strcmp("-l", argv[i])) {
-				if(++i > argc) {
+				if(++i >= argc) {
 					printf("Need value for letters.\n");
 					printf("Use for stingy passphrases.\n");
 					return 1;
