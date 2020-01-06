@@ -68,12 +68,13 @@ static long int prng(long int *state, int *counter_mod)
 
 int main(int argc, char *argv[])
 {
-	int i, counter = 1;
+	int i, counter = 1, using_letters = 0, using_quiet_letters = 0;
 	long int state = 0, tmp;
-	char *seed;
-	const char letters[] = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
-				"!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
+	char *seed, *nl;	/* nl=newline */
+	char *letters = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./~" \
+                        "!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
 	unsigned int j, length, randseed = 1218, modulus = 1987;
+	size_t letters_length = strlen(letters);
 
 	if(argc > 1) {
 		for(i = 1; i < argc; ++i) {
@@ -101,10 +102,37 @@ int main(int argc, char *argv[])
 				printf("Valid options are:\n");
 				printf("-s <seed>    -- srand() seed value.\n");
 				printf("-m <modulus> -- modulus value.\n");
+				printf("-l <letters> -- letters.\n");
+				printf("-L           -- ");
+				printf("read letters from stdin.\n");
+				printf("-q           -- ");
+				printf("read letters using getpass().\n");
+				printf("             -- ");
+				printf("must be used with -L\n");
 				printf("-h           -- shows this help.\n");
 				printf("\n");
 				return 0;
 			}
+			else if(!strcmp("-l", argv[i])) {
+				if(++i > argc) {
+					printf("Need value for letters.\n");
+					printf("Use for stingy passphrases.\n");
+					return 1;
+				}
+				letters = argv[i];
+			}
+			else if(!strcmp("-L", argv[i])) {
+				letters = calloc(512, sizeof(char));
+				if(!letters) {
+					printf("Could not allocate 512 bytes.\n");
+					return 1;
+				}
+				using_letters = 1;
+			}
+			else if(!strcmp("-q", argv[i])) {
+				using_quiet_letters = 1;
+			}
+
 		}
 	}
 
@@ -114,6 +142,38 @@ int main(int argc, char *argv[])
 	fflush(stdout);
 
 	while(scanf("%d", &length) != 1);
+	(void) fgetc(stdin);	// chomp newline.
+
+	if(using_letters) {
+		if(!using_quiet_letters) {
+			printf("Enter letters: ");
+			fflush(stdout);
+			if(fgets(letters, 511, stdin) == NULL) {
+				printf("Failed to fgets()\n");
+				free(letters);
+				return 1;
+			}
+
+			nl = strchr(letters, '\n');
+			if(nl) *nl = '\0';
+			
+			nl = strchr(letters, '\r');
+			if(nl) *nl = '\0';
+
+			if(strlen(letters) == 0) {
+				printf("No letters. Aborting.\n");
+				free(letters);
+				return 1;
+			}
+		} else {
+			free(letters);
+			letters = getpass("Enter letters: ");
+			// perhaps this variable should be called
+			// calloced_letters? *shrugs* it works.
+			using_letters = 0;
+		}
+		letters_length = strlen(letters);
+	}
 
 	srand(randseed);
 	for(j = 0; j < strlen(seed); ++j) {
@@ -124,10 +184,13 @@ int main(int argc, char *argv[])
 
 	for(j = 0; j < length; ++j) {
 		printf("%c",
-			letters[prng(&state, &counter) % (sizeof(letters)/sizeof(letters[0]))]);
+			letters[prng(&state, &counter) % letters_length]);
 		fflush(stdout);
 	}
 	printf("\n");
+
+	if(using_letters)
+		free(letters);
 
 	return 0;
 }
