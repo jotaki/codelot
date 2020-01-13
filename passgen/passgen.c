@@ -80,27 +80,32 @@ int main(int argc, char *argv[])
 
 	unsigned int j, length, randseed = 1218, modulus = 1987;
 	size_t letters_length = sizeof(lletters)/sizeof(lletters[0]);
+	register int rc = 0;
 
 	if(argc > 1) {
 		for(i = 1; i < argc; ++i) {
 			if(!strcmp("-s", argv[i])) {
 				if(++i >= argc) {
 					printf("Need value for seed.\n");
-					return 1;
+					++rc;
+					goto out;
 				}
 				if(sscanf(argv[i], "%d", &randseed) != 1) {
 					printf("Invalid seed value: %s\n", argv[i]);
-					return 1;
+					++rc;
+					goto out;
 				}
 			}
 			else if(!strcmp("-m", argv[i])) {
 				if(++i >= argc) {
 					printf("Need value for modulus.\n");
-					return 1;
+					++rc;
+					goto out;
 				}
 				if(sscanf(argv[i], "%d", &modulus) != 1) {
 					printf("Invalid modulus value: %s\n", argv[i]);
-					return 1;
+					++rc;
+					goto out;
 				}
 			}
 			else if(!strcmp("-h", argv[i])) {
@@ -116,13 +121,14 @@ int main(int argc, char *argv[])
 				printf("must be used with -L\n");
 				printf("-h           -- shows this help.\n");
 				printf("\n");
-				return 0;
+				goto out;
 			}
 			else if(!strcmp("-l", argv[i])) {
 				if(++i >= argc) {
 					printf("Need value for letters.\n");
 					printf("Use for stingy passphrases.\n");
-					return 1;
+					++rc;
+					goto out;
 				}
 				letters = argv[i];
 				letters_length = strlen(letters);
@@ -131,7 +137,8 @@ int main(int argc, char *argv[])
 				letters = calloc(512, sizeof(char));
 				if(!letters) {
 					printf("Could not allocate 512 bytes.\n");
-					return 1;
+					++rc;
+					goto out;
 				}
 				using_letters = 1;
 			}
@@ -204,8 +211,9 @@ int main(int argc, char *argv[])
 	}
 	printf("\n");
 
+out:
 	if(using_letters)
 		free(letters);
 
-	return 0;
+	return rc;
 }
