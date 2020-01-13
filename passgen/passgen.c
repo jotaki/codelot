@@ -6,8 +6,6 @@
  * No warranty.
  * Feel free to reuse this code however you wish.
  * Written by Joseph T. Kinsella
- *
- * $v 0.1
  */
 #include <stdio.h>
 #include <stdlib.h>
