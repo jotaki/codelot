@@ -246,7 +246,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		case '>':
 		case 'l':
 			for(int rep = 0; rep < repeat; ++rep) {
-				brainfuck_eval_chr(machinep, '>', true);
+				brainfuck_eval_chr(machinep, '>', ifacep->execute);
 				ifacep->code.buf[ifacep->code.length++] = '>';
 			}
 			break;
@@ -255,7 +255,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		case '<':
 		case 'h':
 			for(int rep = 0; rep < repeat; ++rep) {
-				brainfuck_eval_chr(machinep, '<', true);
+				brainfuck_eval_chr(machinep, '<', ifacep->execute);
 				ifacep->code.buf[ifacep->code.length++] = '<';
 			}
 			break;
@@ -264,7 +264,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		case '+':
 		case '-':
 			for(int rep = 0; rep < repeat; ++rep) {
-				brainfuck_eval_chr(machinep, ch, true);
+				brainfuck_eval_chr(machinep, ch, ifacep->execute);
 				ifacep->code.buf[ifacep->code.length++] = ch;
 			}
 
@@ -274,7 +274,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		case 'j':
 			for(int rep = 0; rep < repeat; ++rep) {
 				for(int i = 0; i < FIXED_MEM_WIDTH; ++i) {
-					brainfuck_eval_chr(machinep, '>', true);
+					brainfuck_eval_chr(machinep, '>', ifacep->execute);
 					ifacep->code.buf[ifacep->code.length++] = '>';
 				}
 			}
@@ -285,7 +285,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		case 'k':
 			for(int rep = 0; rep < repeat; ++rep) {
 				for(int i = 0; i < FIXED_MEM_WIDTH; ++i) {
-					brainfuck_eval_chr(machinep, '<', true);
+					brainfuck_eval_chr(machinep, '<', ifacep->execute);
 					ifacep->code.buf[ifacep->code.length++] = '<';
 				}
 			}
@@ -298,7 +298,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 			boundry %= FIXED_MEM_WIDTH;
 
 			for(int i = 0; i < boundry; ++i) {
-				brainfuck_eval_chr(machinep, '<', true);
+				brainfuck_eval_chr(machinep, '<', ifacep->execute);
 				ifacep->code.buf[ifacep->code.length++] = '<';
 			}
 		}
@@ -312,7 +312,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 			boundry = FIXED_MEM_WIDTH - boundry - 1;
 
 			for(int i = 0; i < boundry; ++i) {
-				brainfuck_eval_chr(machinep, '>', true);
+				brainfuck_eval_chr(machinep, '>', ifacep->execute);
 				ifacep->code.buf[ifacep->code.length++] = '>';
 			}
 		}
@@ -321,7 +321,9 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		// shorthand for [-]
 		case '_':
 			brainfuck_compile(machinep, "[-]");
-			machine_run(machinep);
+			if(ifacep->execute) machine_run(machinep);
+			else                machine_skip(machinep);
+
 			ifacep->code.length += 
 				sprintf(&ifacep->code.buf[ifacep->code.length], "[-]");
 
@@ -329,9 +331,47 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 
 		// putc
 		case '.':
-			brainfuck_eval_chr(machinep, ch, true);
+			brainfuck_eval_chr(machinep, ch, ifacep->execute);
 			ifacep->code.buf[ifacep->code.length++] = '.';
 			break;
+
+		// begin loop if memory[memp] != 0
+		case '[':
+			if(machinep->memory[machinep->memp] == 0)
+				ifacep->execute = false;
+			else
+				ifacep->execute = true;
+
+			brainfuck_eval_chr(machinep, ch, false);
+			ifacep->code.buf[ifacep->code.length++] = '[';
+
+			// store ip of loop beginning
+			ifacep->loopaddr[ifacep->curloop++] = machinep->ip - 1;
+			break;
+
+		case ']': {
+			ifacep->code.buf[ifacep->code.length++] = ']';
+
+			// get current loop
+			int curloop = --ifacep->curloop;
+
+			// hacky- should this be here?
+			// get starting ip
+			int startip = ifacep->loopaddr[curloop];
+
+			// update matching '[' with newly placed ']'.
+			machinep->ops[startip].param.addr = machinep->codesize;
+			machinep->ops[machinep->codesize].param.addr = startip;
+
+			int memp = machinep->memp;
+
+			// execute code if necessary.
+			if(ifacep->curloop == 0 || machinep->memory[memp] != 0)
+				ifacep->execute = true;
+
+			brainfuck_eval_chr(machinep, ']', ifacep->execute);
+		}
+		break;
 
 		default:
 			if(isdigit(ch))
@@ -442,6 +482,7 @@ int cli(struct machine *machinep)
 	machinep->inputfd = infd[0];
 	machinep->outputfd = outfd[1];
 	
+	iface->execute = true;
 	iface->inputfd = outfd[0];
 	iface->outputfd = infd[1];
 

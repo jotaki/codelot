@@ -28,9 +28,31 @@ void machine_destroy(struct machine **machinep)
 	}
 }
 
+char *machine_translate(enum opcode op)
+{
+	char *retbuf = "unknown";
+
+	switch(op) {
+		case OPCODE_TRAP: retbuf = "trap"; break;
+		case OPCODE_JUMP: retbuf = "]"; break;
+		case OPCODE_JUMPZERO: retbuf = "["; break;
+		case OPCODE_MOVERIGHT: retbuf = ">"; break;
+		case OPCODE_MOVELEFT: retbuf = "<"; break;
+		case OPCODE_INCREMENT: retbuf = "+"; break;
+		case OPCODE_DECREMENT: retbuf = "-"; break;
+		case OPCODE_INPUT: retbuf = ","; break;
+		case OPCODE_OUTPUT: retbuf = "."; break;
+	}
+
+	return retbuf;
+}
+
 void machine_run(struct machine *mp)
 {
 	while(mp->ip < mp->codesize) {
+		fprintf(stderr, "%08x  %02x (%s)\n", mp->ip, mp->ops[mp->ip].opcode,
+			machine_translate(mp->ops[mp->ip].opcode));
+
 		switch(mp->ops[mp->ip].opcode) {
 			case OPCODE_TRAP:
 				fprintf(stderr, "Reached unknown code space.\n");
@@ -84,3 +106,7 @@ void machine_run(struct machine *mp)
 	}
 }
 
+void machine_skip(struct machine *machinep)
+{
+	machinep->ip = machinep->codesize;
+}

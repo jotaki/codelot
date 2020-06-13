@@ -1,6 +1,10 @@
 #ifndef BFI2_H
 # define BFI2_H
 
+# include <termios.h>
+# include <sys/ioctl.h>
+# include <stdbool.h>
+
 # ifndef MIN
 #  define MIN(a,b)	((a)<(b)?(a):(b))
 # endif
@@ -44,10 +48,8 @@ struct machine {
 	int outputfd;		// output fd
 };
 
-# include <termios.h>
-# include <sys/ioctl.h>
-
 struct interface {
+	bool execute;
 	struct winsize ws;
 
 	struct {
@@ -63,9 +65,9 @@ struct interface {
 	int inputfd;
 	int outputfd;
 	unsigned int startaddr;
+	unsigned int loopaddr[0x100];
+	unsigned int curloop;
 };
-
-# include <stdbool.h>
 
 int brainfuck_compile(struct machine *mp, const char *code);
 void brainfuck_eval_chr(struct machine *mp, int ch, bool execute);
@@ -73,6 +75,7 @@ void brainfuck_eval_chr(struct machine *mp, int ch, bool execute);
 struct machine *machine_create(struct machine **machinep);
 void machine_destroy(struct machine **machinep);
 void machine_run(struct machine *mp);
+void machine_skip(struct machine *machinep);
 
 void raw(bool enable, bool noecho);
 int cli(struct machine *machinep);

@@ -123,7 +123,6 @@ void brainfuck_eval_chr(struct machine *mp, int ch, bool execute)
 			break;
 	}
 
-	if(execute)
-		machine_run(mp);
+	if(execute) machine_run(mp);
+	else        machine_skip(mp);
 }
-
