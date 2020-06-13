@@ -1,6 +1,6 @@
 CC= gcc
 CFLAGS= -W -Wall -g -O2 -std=gnu99
-SRCS= main.c brainfuck.c machine.c cli.c interface.c
+SRCS= main.c brainfuck.c machine.c cli.c interface.c misc.c
 OBJS= $(SRCS:.c=.o)
 LIBS= -lm
 

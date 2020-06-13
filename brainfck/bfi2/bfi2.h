@@ -28,6 +28,8 @@ enum opcode {
 # define MEMORY_SIZE	0x10000		// 64K
 # define CODE_SIZE	0x10000
 
+# define MAX_MARKS		0x10
+
 struct instruction {
 	enum opcode opcode;
 	union {
@@ -48,9 +50,18 @@ struct machine {
 	int outputfd;		// output fd
 };
 
+enum interface_mode {
+	IM_DEFAULT,
+
+	IM_FUNC_INSERT,
+	IM_FUNC_MARK,
+};
+
 struct interface {
 	bool execute;
 	struct winsize ws;
+	enum interface_mode mode;
+		
 
 	struct {
 		char buf[8192];
@@ -67,10 +78,14 @@ struct interface {
 	unsigned int startaddr;
 	unsigned int loopaddr[0x100];
 	unsigned int curloop;
+
+	unsigned int mark[MAX_MARKS];
+	unsigned int nmarks;
 };
 
 int brainfuck_compile(struct machine *mp, const char *code);
 void brainfuck_eval_chr(struct machine *mp, int ch, bool execute);
+void brainfuck_funcmove(struct interface *ifacep, struct machine *mp);
 
 struct machine *machine_create(struct machine **machinep);
 void machine_destroy(struct machine **machinep);
@@ -90,7 +105,7 @@ void interface_destroy(struct interface **interfacep);
 void interface_appendoutput(struct interface *ifacep, const char *fmt, ...);
 void interface_clroutput(struct interface *ifacep);
 
-void showhelp(void);
+void showhelp(struct interface *ifacep);
 
 void drawheader(struct interface *ifacep, struct machine *machinep);
 void drawseparator(struct interface *ifacep);
@@ -104,10 +119,19 @@ void showoutput(struct interface *ifacep, struct machine *machinep);
 void showcode(struct interface *ifacep, struct machine *machinep);
 
 int userinput(struct interface *ifacep, struct machine *machinep, int ch);
+int userinputdefault(struct interface *ifacep, struct machine *machinep, int ch);
+int userinputinsert(struct interface *ifacep, struct machine *machinep, int ch);
+int userinputmark(struct interface *ifacep, struct machine *machinep, int ch);
+int userinputhelp(struct interface *ifacep, struct machine *machinep, int ch);
 
 // cols is 9 + 3 * 16 + 3 + 16 + 1
 # define FIXED_LINE_WIDTH	77
 # define FIXED_MEM_WIDTH	16
 # define FIXED_CODE_LENGTH	60
+
+char *calculate_offset(long n);
+char *calculate_inverse(char *input);
+
+void alert(struct interface *ifacep, const char *fmt, ...);
 
 #endif	/* !BFI2_H */

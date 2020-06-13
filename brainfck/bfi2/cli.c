@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "bfi2.h"
 
@@ -34,84 +35,157 @@ void raw(bool enable, bool noecho)
 		tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig);
 }
 
-void showhelp(void)
+void printw(int y, int x, char *str)
 {
-	int y, x;
-
-	clr();
-
-	y = 2;
-	x = 74 / 4;
-
 	moveto(y, x);
-	printf("+--------------------------------------------------------+\n");
 
-	moveto(y+1, x);
-	printf("|                                                        |\n");
+	int len = strlen(str);
+	int pad = (56 - len) / 2;
 
-	moveto(y+2, x);
-	printf("|                 +    : increment value                 |\n");
+	printf("\u2502");
+	for(int i = 0; i < pad; ++i) printf(" ");
+
+	printf("%s", str);
 	
-	moveto(y+3, x);
-	printf("|                 -    : decrement value                 |\n");
-	
-	moveto(y+4, x);
-	printf("|                 < h  : move left                       |\n");
+	for(int i = len + pad + 1; i < 57; ++i) printf(" ");
+	printf("\u2502");
+}
 
-	moveto(y+5, x);
-	printf("|                 > l  : move right                      |\n");
+void showhelp(struct interface *ifacep)
+{
+	(void) ifacep;
+	static char *help[] = {
+		"+       : increment value      ",
+		"-       : decrement value      ",
+		"<  h    : move left            ",
+		">  l    : move right           ",
+		"",
+		"^       : go to beginning of 16",
+		"          cell boundry.        ",
+		"$       : go to end of 16 cell ",
+		"          boundry.             ",
+		"",
+		"[       : begin loop if cell   ",
+		"          is nonzero           ",
+		"]       : jump to beginning    ",
+		"          of loop              ",
+		"",
+		".       : print cell to output ",
+		",       : read input to cell   ",
+		"",
+		"j       : move 16 cells to the ",
+		"          right.               ",
+		"k       : move 16 cells to the ",
+		"          left.                ",
+		"",
+		"m       : mark cell to register",
+		"          available registers: ",
+		"          0-9, a-f             ",
+		"",
+		"M       : move value marked by ",
+		"          register 0 to current",
+		"          cell.                ",
+		"",
+		"i       : insert value by      ",
+		"          factoring the input  ",
+		"          character.           ",
+		"",
+		"?       : show this help.      ",
+	};
 
-	moveto(y+6, x);
-	printf("|                 ,    : get input                       |\n");
+	int y, x, offset = 0, ch;
 
-	moveto(y+7, x);
-	printf("|                 .    : print output                    |\n");
+	do {
+		y = 2;
+		x = (FIXED_LINE_WIDTH - 58) / 2;
 
-	moveto(y+8, x);
-	printf("|                 [    : start loop                      |\n");
+		moveto(y, x);
 
-	moveto(y+9, x);
-	printf("|                 ]    : end loop                        |\n");
+		printf("\u250c");
+		for(int i = 0; i < 56; ++i) printf("\u2500");
+		printf("\u2510");
+		
+		printw(++y, x, "");
 
-	moveto(y+10, x);
-	printf("|                 j    : > * 16                          |\n");
+		for(int i = 0; i < 14; ++i)
+			printw(++y, x, help[offset+i]);
 
-	moveto(y+11, x);
-	printf("|                 k    : < * 16                          |\n");
+		printw(++y, x, "");
+		printw(++y, x, "Scroll with j and k, q to close.");
 
-	moveto(y+12, x);
-	printf("|               n<op>  : do <op> n times                 |\n");
+		moveto(++y, x);
 
-	moveto(y+13, x);
-	printf("|                 ?    : show this help.                 |\n");
+		printf("\u2514");
+		for(int i = 0; i < 56; ++i) printf("\u2500");
+		printf("\u2518");
 
-	moveto(y+14, x);
-	printf("|                                                        |\n");
+		moveto(0, 0);
+		ch = fgetc(stdin);
 
-	moveto(y+15, x);
-	printf("|          Press any key to return to interface.         |\n");
+		switch(ch) {
+			case 'j':
+				offset = MIN(offset+1, 36-14);
+				break;
 
-	moveto(y+16, x);
-	printf("|                                                        |\n");
-
-	moveto(y+17, x);
-	printf("+--------------------------------------------------------+\n");
-
-	fgetc(stdin);
+			case 'k':
+				offset = MAX(offset - 1, 0);
+				break;
+		}
+	} while(ch != 'q');
 }
 
 void drawheader(struct interface *ifacep, struct machine *machinep)
 {
-	(void) ifacep;
-
 	// Reverse and bold text.
 	printf("\033[7m\033[1m");
 
 	// print instruction pointer
 	printf("ip: %08x", machinep->ip);
 
+	// length and center of length
+	unsigned int length = FIXED_LINE_WIDTH - 24;
+	unsigned int center = length / 2;
+
+	// iterator and iterator max
+	unsigned int i, max = 0;
+
+	// display string
+	char *dspstr = "";
+
+	switch(ifacep->mode) {
+		case IM_DEFAULT:
+			max = ifacep->curloop;
+			break;
+
+		case IM_FUNC_INSERT:
+			max = 6;
+			dspstr = "INSERT";
+			break;
+
+		case IM_FUNC_MARK:
+			max = 4;
+			dspstr = "MARK";
+			break;
+	}
+
+	// calculate center
+	center = length / 2 - max;
+
 	// padding
-	for(int i = 0; i < FIXED_LINE_WIDTH - 24; ++i)
+	for(i = 0; i < center; ++i)
+		printf(" ");
+
+	// print '[' times the number of open loops.
+	if(ifacep->mode != IM_DEFAULT) {
+		printf("%s", dspstr);
+		i += max;
+	} else {
+		for(unsigned int j = 0; j < ifacep->curloop; ++j, ++i)
+			printf("[");
+	}
+
+	// more padding
+	for(; i < length; ++i)
 		printf(" ");
 
 	// print memory pointer
@@ -176,8 +250,20 @@ void showmemory(struct interface *ifacep, struct machine *machinep)
 
 		// print hex value at address
 		for(int i = 0; i < FIXED_MEM_WIDTH; ++i) {
-			int addr = ifacep->startaddr + offset + i;
-			printf(" %02x", machinep->memory[addr] & 0xff);
+			unsigned int addr = ifacep->startaddr + offset + i;
+			bool highlight = false;
+
+			for(int i = 0; i < MAX_MARKS; ++i) {
+				if((ifacep->mark[i] - 1) == addr) {
+					highlight = true;
+					break;
+				}
+			}
+
+			if(!highlight)
+				printf(" %02x", machinep->memory[addr] & 0xff);
+			else
+				printf("\e[7m %02x\e[0m", machinep->memory[addr] & 0xff);
 		}
 
 		printf("  |");
@@ -228,7 +314,83 @@ void updatecursor(struct interface *ifacep, struct machine *machinep)
 	moveto(y, x);
 }
 
+int userinputhelp(struct interface *ifacep, struct machine *machinep, int ch)
+{
+	(void) machinep;
+	(void) ch;
+
+	ifacep->mode = IM_DEFAULT;
+
+	return 0;
+}
+
 int userinput(struct interface *ifacep, struct machine *machinep, int ch)
+{
+	int (*funcp)() = userinputdefault;
+
+	switch(ifacep->mode) {
+		case IM_DEFAULT:
+			funcp = userinputdefault;
+			break;
+
+		case IM_FUNC_INSERT:
+			funcp = userinputinsert;
+			break;
+
+		case IM_FUNC_MARK:
+			funcp = userinputmark;
+			break;
+	}
+
+	return funcp(ifacep, machinep, ch);
+}
+
+int userinputmark(struct interface *ifacep, struct machine *machinep, int ch)
+{
+	ifacep->mode = IM_DEFAULT;
+
+	// default to marker 0.
+	if(ch == '\n')
+		ch = '0';
+
+	if(isxdigit(ch)) {
+		unsigned int index = ch - '0';
+
+		if(ch >= 'a' && ch <= 'f')
+			index = ch - 87;
+		else if(ch >= 'A' && ch <= 'F')
+			index = ch - 55;
+
+		unsigned int memp = ifacep->mark[index];
+		if(memp != machinep->memp+1) {
+			ifacep->mark[index] = machinep->memp+1;
+			if(memp == 0)
+				++ifacep->nmarks;
+		} else {
+			--ifacep->nmarks;
+			ifacep->mark[index] = 0;
+		}
+	} else if(ch == 'm') {
+		unsigned int startaddr = machinep->memp - (machinep->memp % 16);
+		bool alreadymarked = true;
+
+		for(int i = 0; i < MAX_MARKS; ++i) {
+			if(ifacep->mark[i] != startaddr + i + 1) {
+				alreadymarked = false;
+				break;
+			}
+		}
+		
+		for(int i = 0; i < MAX_MARKS; ++i)
+			ifacep->mark[i] = alreadymarked ? 0 : startaddr + i + 1;
+
+		ifacep->nmarks = alreadymarked ? 0 : MAX_MARKS;
+	}
+
+	return 0;
+}
+
+int userinputdefault(struct interface *ifacep, struct machine *machinep, int ch)
 {
 	static int repeat = 0;
 	(void) ifacep;
@@ -373,6 +535,78 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		}
 		break;
 
+		// insert value
+		case 'i':
+			ifacep->mode = IM_FUNC_INSERT;
+			break;
+
+		// mark value
+		case 'm':
+			ifacep->mode = IM_FUNC_MARK;
+			break;
+
+		// move character
+		case 'M': {
+			int memp0 = ifacep->mark[0];
+			int mp = machinep->memp;
+
+			if(memp0 == 0) {
+				alert(ifacep, "please asign marker 0\n");
+				break;
+			}
+
+			// fix memp location.
+			memp0 -= 1;
+
+			// find marked position
+			char *oldcell = calculate_offset(memp0 - mp);
+			if(!oldcell)
+				break;
+
+			// find cell back
+			char *newcell = calculate_inverse(oldcell);
+			if(!newcell) {
+				free(oldcell);
+				break;
+			}
+
+			// create buffer.
+			int olen = strlen(oldcell);
+			int clen = strlen(newcell);
+
+			// 3 + olen + 1 + clen + 1 + olen + 2 + clen + 1
+			char *buf = calloc(8 + 2 * olen + 2 * clen, sizeof(char));
+			if(!buf) {
+				free(oldcell);
+				free(newcell);
+				break;
+			}
+
+			// brainfuck code.
+			sprintf(buf,"[-]%s[%s+%s-]%s", oldcell, newcell, oldcell, newcell);
+
+			// compile and run/skip.
+			brainfuck_compile(machinep, buf);
+			if(ifacep->execute)
+				machine_run(machinep);
+			else
+				machine_skip(machinep);
+
+			// unmark 0.
+			ifacep->mark[0] = 0;
+			--ifacep->nmarks;
+
+			// cleanup
+			free(buf);
+			free(newcell);
+			free(oldcell);
+		}
+		break;
+
+		case '?':
+			showhelp(ifacep);
+			break;
+
 		default:
 			if(isdigit(ch))
 				repeat = repeat * 10 + (ch - '0');
@@ -381,6 +615,73 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 	if(!isdigit(ch))
 		repeat = 0;
 
+	return 0;
+}
+
+int userinputinsert(struct interface *ifacep, struct machine *machinep, int ch)
+{
+	ifacep->mode = IM_DEFAULT;
+
+	// compute sqrt of entered character.
+	int sqr = sqrt(ch);
+
+	// compute factors
+	int f0, f1, pad = 0;
+
+	for(f0 = sqr; ch % f0 != 0; --f0)
+		/* do nothing */ ;
+
+	// prime case
+	if(f0 == 1) {
+		f0 = ch / sqr;
+		pad = ch % sqr;
+	}
+
+	f1 = ch / f0;
+
+	// allocate buffer
+	char *buf = calloc(14 + f0 + f1 + pad + 1, sizeof(char));
+	if(!buf)
+		return 0;
+
+	// start brainfuck
+	int length = sprintf(buf, "[-]>[-]");
+	
+	// outside value
+	for(int i = 0; i < f0; ++i)
+		buf[length++] = '+';
+
+	// start loop
+	buf[length++] = '[';
+	buf[length++] = '<';
+
+	// inside value
+	for(int i = 0; i < f1; ++i)
+		buf[length++] = '+';
+
+	// close loop
+	buf[length++] = '>';
+	buf[length++] = '-';
+	buf[length++] = ']';
+
+	// shift to newly created value.
+	buf[length++] = '<';
+
+	// pad if necessary
+	for(int i = 0; i < pad; ++i)
+		buf[length++] = '+';
+
+	buf[length++] = '\0';
+
+	// compile and run/skip
+	brainfuck_compile(machinep, buf);
+
+	if(ifacep->execute)
+		machine_run(machinep);
+	else
+		machine_skip(machinep);
+
+	free(buf);
 	return 0;
 }
 
@@ -482,9 +783,11 @@ int cli(struct machine *machinep)
 	machinep->inputfd = infd[0];
 	machinep->outputfd = outfd[1];
 	
-	iface->execute = true;
 	iface->inputfd = outfd[0];
 	iface->outputfd = infd[1];
+
+	iface->execute = true;
+	iface->mode = IM_DEFAULT;
 
 	fd_set readfds;
 

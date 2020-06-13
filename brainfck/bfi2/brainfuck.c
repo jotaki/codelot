@@ -126,3 +126,9 @@ void brainfuck_eval_chr(struct machine *mp, int ch, bool execute)
 	if(execute) machine_run(mp);
 	else        machine_skip(mp);
 }
+
+void brainfuck_funcmove(struct interface *ifacep, struct machine *mp)
+{
+	(void) ifacep;
+	(void) mp;
+}
