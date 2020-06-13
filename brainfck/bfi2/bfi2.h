@@ -98,11 +98,13 @@ void updatecursor(struct interface *ifacep, struct machine *machinep);
 
 void showmemory(struct interface *ifacep, struct machine *machinep);
 void showoutput(struct interface *ifacep, struct machine *machinep);
+void showcode(struct interface *ifacep, struct machine *machinep);
 
 int userinput(struct interface *ifacep, struct machine *machinep, int ch);
 
 // cols is 9 + 3 * 16 + 3 + 16 + 1
 # define FIXED_LINE_WIDTH	77
 # define FIXED_MEM_WIDTH	16
+# define FIXED_CODE_LENGTH	60
 
 #endif	/* !BFI2_H */
