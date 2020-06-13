@@ -64,6 +64,8 @@ void showhelp(struct interface *ifacep)
 		"          cell boundry.        ",
 		"$       : go to end of 16 cell ",
 		"          boundry.             ",
+		"_       : zero out cell. short ",
+		"          hand for [-]         ",
 		"",
 		"[       : begin loop if cell   ",
 		"          is nonzero           ",
@@ -96,7 +98,7 @@ void showhelp(struct interface *ifacep)
 	int y, x, offset = 0, ch;
 
 	do {
-		y = 2;
+		y = (ifacep->ws.ws_row - 17) / 2;
 		x = (FIXED_LINE_WIDTH - 58) / 2;
 
 		moveto(y, x);
@@ -124,7 +126,7 @@ void showhelp(struct interface *ifacep)
 
 		switch(ch) {
 			case 'j':
-				offset = MIN(offset+1, 36-14);
+				offset = MIN(offset+1, 38-14);
 				break;
 
 			case 'k':
@@ -165,6 +167,11 @@ void drawheader(struct interface *ifacep, struct machine *machinep)
 		case IM_FUNC_MARK:
 			max = 4;
 			dspstr = "MARK";
+			break;
+
+		case IM_INPUT:
+			max = 14;
+			dspstr = "Awaiting input";
 			break;
 	}
 
@@ -301,14 +308,20 @@ void updatestartaddr(struct interface *ifacep, struct machine *machinep)
 
 void updatecursor(struct interface *ifacep, struct machine *machinep)
 {
-	// calculate distance between (display) start address and memp
-	int dist = machinep->memp - ifacep->startaddr;
+	int y = 0, x = 0;
 
-	// calculate y
-	int y = dist / FIXED_MEM_WIDTH + 2;
+	if(ifacep->mode == IM_INPUT)
+		calculateyx(ifacep, &y, &x);
+	else {
+		// calculate distance between (display) start address and memp
+		int dist = machinep->memp - ifacep->startaddr;
 
-	// calculate x
-	int x = 8 + 3 * ((dist % FIXED_MEM_WIDTH) + 1);
+		// calculate y
+		y = dist / FIXED_MEM_WIDTH + 2;
+
+		// calculate x
+		x = 8 + 3 * ((dist % FIXED_MEM_WIDTH) + 1);
+	}
 
 	// move cursor to calculated y,x position.
 	moveto(y, x);
@@ -340,9 +353,25 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch)
 		case IM_FUNC_MARK:
 			funcp = userinputmark;
 			break;
+
+		case IM_INPUT:
+			funcp = userinputbrainfuck;
+			break;
 	}
 
 	return funcp(ifacep, machinep, ch);
+}
+
+int userinputbrainfuck(struct interface *ifacep, struct machine *machinep, int ch)
+{
+	interface_appendoutput(ifacep, "%c", ch);
+	if(write(ifacep->outputfd, &ch, 1) < 0)
+		perror("write");
+
+	brainfuck_eval_chr(machinep, ',', ifacep->execute);
+
+	ifacep->mode = IM_DEFAULT;
+	return 0;
 }
 
 int userinputmark(struct interface *ifacep, struct machine *machinep, int ch)
@@ -607,6 +636,10 @@ int userinputdefault(struct interface *ifacep, struct machine *machinep, int ch)
 			showhelp(ifacep);
 			break;
 
+		case ',':
+			ifacep->mode = IM_INPUT;
+			break;
+
 		default:
 			if(isdigit(ch))
 				repeat = repeat * 10 + (ch - '0');
@@ -703,17 +736,24 @@ void showoutput(struct interface *ifacep, struct machine *machinep)
 {
 	(void) machinep;
 
-	int offset = 0;
-
 	// move to output canvas
 	moveto(ifacep->ws.ws_row / 2 + 1, 0);
 
-	// calculate max
-	int max = (ifacep->ws.ws_row - 1) - (ifacep->ws.ws_row / 2 + 1);
-	max *= FIXED_LINE_WIDTH;
+	int height = ifacep->ws.ws_row / 2 - 2;
+	int maxbytes = height * FIXED_LINE_WIDTH;
+	int offset = 0, newlines = 0;
 
-	if(ifacep->output.length > max)
-		offset = ifacep->output.length - max;
+	if(ifacep->output.length > maxbytes)
+		offset = ifacep->output.length - maxbytes;
+
+	for(int i = ifacep->output.length; i >= offset; --i) {
+		if(ifacep->output.buf[i] == '\n') {
+			if(++newlines == height+2) {
+				offset = i + 1;
+				break;
+			}
+		}
+	}
 
 	// output buffer to canvas.
 	for(int j = 0, i = offset; i < ifacep->output.length; ++i, ++j) {
@@ -757,6 +797,49 @@ void showcode(struct interface *ifacep, struct machine *machinep)
 	printf("\033[0m");
 }
 
+int cliloop(struct interface *ifacep, struct machine *machinep)
+{
+	fd_set readfds;
+
+	FD_ZERO(&readfds);
+	FD_SET(ifacep->inputfd, &readfds);
+	FD_SET(fileno(stdin), &readfds);
+
+	termsize(&ifacep->ws);
+	clr();
+	moveto(0, 0);
+
+	drawheader(ifacep, machinep);
+	drawseparator(ifacep);
+	drawfooter(ifacep, machinep);
+
+	updatestartaddr(ifacep, machinep);
+
+	showmemory(ifacep, machinep);
+	showoutput(ifacep, machinep);
+	showcode(ifacep, machinep);
+
+	updatecursor(ifacep, machinep);
+
+	fd_set cpy = readfds;
+	int nfds = MAX(fileno(stdin), ifacep->inputfd) + 1;
+	int ret = select(nfds, &cpy, NULL, NULL, NULL);
+	if(ret < 0) {
+		interface_appendoutput(ifacep, "select failed.");
+		return -1;
+	} else if(ret > 0) {
+		if(FD_ISSET(fileno(stdin), &cpy)) {
+			int ch = fgetc(stdin);
+			if(userinput(ifacep, machinep, ch))
+				return -1;
+
+		} else if(FD_ISSET(ifacep->inputfd, &cpy))
+			cliread(ifacep, machinep);
+	}
+
+	return 0;
+}
+
 int cli(struct machine *machinep)
 {
 	struct interface *iface = NULL;
@@ -782,55 +865,23 @@ int cli(struct machine *machinep)
 	// use pipes for io buffer
 	machinep->inputfd = infd[0];
 	machinep->outputfd = outfd[1];
-	
+
 	iface->inputfd = outfd[0];
 	iface->outputfd = infd[1];
 
-	iface->execute = true;
-	iface->mode = IM_DEFAULT;
+	// prehook procedure for brainfuck interpreter
+	machinep->prehook = brainfuck_prehook;
+	machinep->userptr = iface;
 
-	fd_set readfds;
-
-	FD_ZERO(&readfds);
-	FD_SET(iface->inputfd, &readfds);
-	FD_SET(fileno(stdin), &readfds);
-
+	iface->execute = true;		// execute brainfuck
+	iface->mode = IM_DEFAULT;	// default mode
+	
 	// enter raw mode
 	raw(true, true);
 
-	while(true) {
-		termsize(&iface->ws);
-		clr();
-		moveto(0, 0);
-
-		drawheader(iface, machinep);
-		drawseparator(iface);
-		drawfooter(iface, machinep);
-
-		updatestartaddr(iface, machinep);
-
-		showmemory(iface, machinep);
-		showoutput(iface, machinep);
-		showcode(iface, machinep);
-
-		updatecursor(iface, machinep);
-
-		fd_set cpy = readfds;
-		int nfds = MAX(fileno(stdin), iface->inputfd) + 1;
-		int ret = select(nfds, &cpy, NULL, NULL, NULL);
-		if(ret < 0) {
-			interface_appendoutput(iface, "select failed.");
-			continue;
-		} else if(ret > 0) {
-			if(FD_ISSET(fileno(stdin), &cpy)) {
-				int ch = fgetc(stdin);
-				if(userinput(iface, machinep, ch))
-					break;
-
-			} else if(FD_ISSET(iface->inputfd, &cpy))
-				cliread(iface, machinep);
-		}
-	}
+	// loop interface
+	while(cliloop(iface, machinep) == 0)
+		/* do nothing */ ;
 
 	// leave raw mode
 	raw(false, true);

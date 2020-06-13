@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "bfi2.h"
 
@@ -127,8 +128,37 @@ void brainfuck_eval_chr(struct machine *mp, int ch, bool execute)
 	else        machine_skip(mp);
 }
 
-void brainfuck_funcmove(struct interface *ifacep, struct machine *mp)
+int brainfuck_prehook(struct machine *machinep, enum opcode opcode, void *iptr)
 {
-	(void) ifacep;
-	(void) mp;
+	struct interface *ifacep = (struct interface *) iptr;
+
+	if(opcode == OPCODE_INPUT && ifacep->mode != IM_INPUT) {
+		ifacep->mode = IM_INPUT;
+		//return cliloop(ifacep, machinep);
+		termsize(&ifacep->ws);
+		clr();
+		moveto(0,0);
+
+		drawheader(ifacep, machinep);
+		drawseparator(ifacep);
+		drawfooter(ifacep, machinep);
+
+		updatestartaddr(ifacep, machinep);
+
+		showmemory(ifacep, machinep);
+		showoutput(ifacep, machinep);
+		showcode(ifacep, machinep);
+
+		updatecursor(ifacep, machinep);
+
+		int ch = fgetc(stdin);
+		interface_appendoutput(ifacep, "%c", ch);
+		if(write(ifacep->outputfd, &ch, 1) < 0) {
+			interface_appendoutput(ifacep, "\nwrite failed.\n");
+			return -1;
+		}
+
+		ifacep->mode = IM_DEFAULT;
+	}
+	return 0;
 }

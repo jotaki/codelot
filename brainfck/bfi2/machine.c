@@ -53,6 +53,13 @@ void machine_run(struct machine *mp)
 		/* fprintf(stderr, "%08x  %02x (%s)\n", mp->ip, mp->ops[mp->ip].opcode,
 			machine_translate(mp->ops[mp->ip].opcode)); */
 
+		if(mp->prehook) {
+			if(mp->prehook(mp, mp->ops[mp->ip].opcode, mp->userptr) < 0) {
+				++mp->ip;
+				continue;
+			}
+		}
+
 		switch(mp->ops[mp->ip].opcode) {
 			case OPCODE_TRAP:
 				fprintf(stderr, "Reached unknown code space.\n");

@@ -48,10 +48,15 @@ struct machine {
 
 	int inputfd;		// input fd
 	int outputfd;		// output fd
+
+	// hacky, used for gui/cli interface.
+	int (*prehook)(struct machine *, enum opcode, void *);
+	void *userptr;
 };
 
 enum interface_mode {
 	IM_DEFAULT,
+	IM_INPUT,
 
 	IM_FUNC_INSERT,
 	IM_FUNC_MARK,
@@ -85,7 +90,7 @@ struct interface {
 
 int brainfuck_compile(struct machine *mp, const char *code);
 void brainfuck_eval_chr(struct machine *mp, int ch, bool execute);
-void brainfuck_funcmove(struct interface *ifacep, struct machine *mp);
+int brainfuck_prehook(struct machine *machinep, enum opcode opcode, void *iptr);
 
 struct machine *machine_create(struct machine **machinep);
 void machine_destroy(struct machine **machinep);
@@ -95,6 +100,7 @@ void machine_skip(struct machine *machinep);
 void raw(bool enable, bool noecho);
 int cli(struct machine *machinep);
 void cliread(struct interface *ifacep, struct machine *machinep);
+int cliloop(struct interface *ifacep, struct machine *machinep);
 
 void clr(void);
 void moveto(int y, int x);
@@ -122,7 +128,7 @@ int userinput(struct interface *ifacep, struct machine *machinep, int ch);
 int userinputdefault(struct interface *ifacep, struct machine *machinep, int ch);
 int userinputinsert(struct interface *ifacep, struct machine *machinep, int ch);
 int userinputmark(struct interface *ifacep, struct machine *machinep, int ch);
-int userinputhelp(struct interface *ifacep, struct machine *machinep, int ch);
+int userinputbrainfuck(struct interface *ifacep, struct machine *machinep, int ch);
 
 // cols is 9 + 3 * 16 + 3 + 16 + 1
 # define FIXED_LINE_WIDTH	77
@@ -131,6 +137,8 @@ int userinputhelp(struct interface *ifacep, struct machine *machinep, int ch);
 
 char *calculate_offset(long n);
 char *calculate_inverse(char *input);
+
+void calculateyx(struct interface *ifacep, int *yp, int *xp);
 
 void alert(struct interface *ifacep, const char *fmt, ...);
 
