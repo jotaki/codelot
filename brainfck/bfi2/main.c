@@ -13,6 +13,8 @@ int main(int argc, char *argv[])
 {
 	char *code = NULL;
 	struct machine *machine = NULL;
+	bool climode = false;
+	char *path;
 
 	if(!machine_create(&machine)) {
 		perror("could not create machine");
@@ -20,16 +22,30 @@ int main(int argc, char *argv[])
 	}
 
 	if(argc == 1) {
-		int rc = cli(machine);
+		int rc = cli(machine, false);
 		
 		machine_destroy(&machine);
 		return rc;
 	}
 
-	FILE *fp = fopen(argv[1], "r");
+	path = argv[1];
+	if(argv[1][0] == '-' && argv[1][1] == 'd') {
+		climode = true;
+
+		if(argc < 3) {
+			printf("Usage: %s [-d <file>]\n", argv[0]);
+			machine_destroy(&machine);
+			return 1;
+		}
+
+		path = argv[2];
+	}
+
+	FILE *fp = fopen(path, "r");
 	if(!fp) {
 		perror("error");
-		fprintf(stderr, "failed to open ``%s''\n", argv[1]);
+		fprintf(stderr, "failed to open ``%s''\n", path);
+		machine_destroy(&machine);
 		return 1;
 	}
 
@@ -40,8 +56,9 @@ int main(int argc, char *argv[])
 	fseek(fp, 0, SEEK_SET);
 
 	if(size <= 0) {
-		fprintf(stderr, "empty file ``%s''\n", argv[1]);
+		fprintf(stderr, "empty file ``%s''\n", path);
 		fclose(fp);
+		machine_destroy(&machine);
 		return 0;
 	}
 
@@ -50,6 +67,7 @@ int main(int argc, char *argv[])
 		perror("error");
 		fprintf(stderr, "cannot allocate buffer (%ld). out of memory?\n", size);
 		fclose(fp);
+		machine_destroy(&machine);
 		return 1;
 	}
 
@@ -72,9 +90,12 @@ int main(int argc, char *argv[])
 	free(code);
 	code = NULL;
 
-	raw(true, false);
-	machine_run(machine);
-	raw(false, false);
+	if(climode == false) {
+		raw(true, false);
+		machine_run(machine);
+		raw(false, false);
+	} else
+		cli(machine, true);
 
 	machine_destroy(&machine);
 

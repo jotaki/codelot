@@ -840,7 +840,7 @@ int cliloop(struct interface *ifacep, struct machine *machinep)
 	return 0;
 }
 
-int cli(struct machine *machinep)
+int cli(struct machine *machinep, bool executefirst)
 {
 	struct interface *iface = NULL;
 	int infd[2], outfd[2], rc = 0;
@@ -878,6 +878,10 @@ int cli(struct machine *machinep)
 	
 	// enter raw mode
 	raw(true, true);
+
+	// execute first?
+	if(executefirst)
+		machine_run(machinep);
 
 	// loop interface
 	while(cliloop(iface, machinep) == 0)

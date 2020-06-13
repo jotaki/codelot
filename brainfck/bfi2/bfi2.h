@@ -98,7 +98,7 @@ void machine_run(struct machine *mp);
 void machine_skip(struct machine *machinep);
 
 void raw(bool enable, bool noecho);
-int cli(struct machine *machinep);
+int cli(struct machine *machinep, bool executefirst);
 void cliread(struct interface *ifacep, struct machine *machinep);
 int cliloop(struct interface *ifacep, struct machine *machinep);
 
