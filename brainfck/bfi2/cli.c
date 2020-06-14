@@ -871,6 +871,7 @@ int cli(struct machine *machinep, bool executefirst)
 
 	// prehook procedure for brainfuck interpreter
 	machinep->prehook = brainfuck_prehook;
+	machinep->posthook = brainfuck_posthook;
 	machinep->userptr = iface;
 
 	iface->execute = true;		// execute brainfuck

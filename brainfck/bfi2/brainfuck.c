@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #include "bfi2.h"
 
@@ -128,13 +129,15 @@ void brainfuck_eval_chr(struct machine *mp, int ch, bool execute)
 	else        machine_skip(mp);
 }
 
-int brainfuck_prehook(struct machine *machinep, enum opcode opcode, void *iptr)
+int brainfuck_prehook(struct machine *machinep, enum opcode opcode, void *data)
 {
-	struct interface *ifacep = (struct interface *) iptr;
+	struct interface *ifacep = (struct interface *) data;
 
 	if(opcode == OPCODE_INPUT && ifacep->mode != IM_INPUT) {
+		enum interface_mode oldmode = ifacep->mode;
+
 		ifacep->mode = IM_INPUT;
-		//return cliloop(ifacep, machinep);
+
 		termsize(&ifacep->ws);
 		clr();
 		moveto(0,0);
@@ -158,7 +161,29 @@ int brainfuck_prehook(struct machine *machinep, enum opcode opcode, void *iptr)
 			return -1;
 		}
 
-		ifacep->mode = IM_DEFAULT;
+		ifacep->mode = oldmode;
 	}
 	return 0;
+}
+
+void brainfuck_posthook(struct machine *machinep, enum opcode opcode, void *data)
+{
+#if 0
+	(void) machinep;
+	(void) opcode;
+	(void) data;
+#else
+	struct interface *ifacep = (struct interface *) data;
+
+	if(opcode == OPCODE_OUTPUT) {
+		struct timeval tv = { .tv_sec = 0, .tv_usec = 250 };
+		fd_set fds;
+
+		FD_ZERO(&fds);
+		FD_SET(ifacep->inputfd, &fds);
+	
+		if(select(ifacep->inputfd+1, &fds, NULL, NULL, &tv) > 0)
+			cliread(ifacep, machinep);
+	}
+#endif
 }

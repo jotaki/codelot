@@ -91,7 +91,8 @@ struct interface {
 
 int brainfuck_compile(struct machine *mp, const char *code);
 void brainfuck_eval_chr(struct machine *mp, int ch, bool execute);
-int brainfuck_prehook(struct machine *machinep, enum opcode opcode, void *iptr);
+int brainfuck_prehook(struct machine *machinep, enum opcode opcode, void *data);
+void brainfuck_posthook(struct machine *machinep, enum opcode opcode, void *data);
 
 struct machine *machine_create(struct machine **machinep);
 void machine_destroy(struct machine **machinep);

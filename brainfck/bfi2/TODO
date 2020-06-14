@@ -1,0 +1,30 @@
+FIXME:
+  segfault when pressing ']' without mathing '['.
+
+FEATURE:
+  thread machine and cleanup input/output between machine and cli/gui
+    |_> maybe add a codefd pipe to write brainfuck to.
+
+  helper keymappings:
+    https://esolangs.org/wiki/Brainfuck_algorithms#x_.3D_x_.2F_y
+
+  input mode for writing brainfuck directly?
+
+  hex view of code?
+
+  resizable "windows" ?
+
+OPTIMIZATIONS:
+  optimizations can be made in brainfuck_compile when dealing with loops.
+  store repeat count of operators and use repeat counts as increment values.
+
+  cli/gui code can be cleaned up (probably)
+
+CHANGEME:
+  use machinep->ops[] instead of ifacep->code for showing code.
+  move some stuff in showhelp() to its own helper function.
+  update alert() to show a window like showhelp(). (use alert() in more places)
+
+CODECHANGE:
+  use a viewport buffer? -- (standardize to be reusable?)
+  hardcoded values should be #define's (probably)
