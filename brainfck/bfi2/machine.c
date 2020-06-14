@@ -110,6 +110,9 @@ void machine_run(struct machine *mp)
 						mp->ops[mp->ip].opcode);
 		}
 		++mp->ip;
+
+		if(mp->posthook)
+			mp->posthook(mp, mp->ops[mp->ip-1].opcode, mp->userptr);
 	}
 }
 

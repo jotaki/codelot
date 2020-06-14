@@ -51,6 +51,7 @@ struct machine {
 
 	// hacky, used for gui/cli interface.
 	int (*prehook)(struct machine *, enum opcode, void *);
+	void (*posthook)(struct machine *, enum opcode, void *);
 	void *userptr;
 };
 
