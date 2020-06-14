@@ -875,6 +875,8 @@ int cli(struct machine *machinep, bool executefirst)
 
 	iface->execute = true;		// execute brainfuck
 	iface->mode = IM_DEFAULT;	// default mode
+
+	//interface_appendoutput(iface, "posthook: %p\n", machinep->posthook);
 	
 	// enter raw mode
 	raw(true, true);

@@ -109,10 +109,11 @@ void machine_run(struct machine *mp)
 				fprintf(stderr, "Unknown opcode. 0x%02x\n",
 						mp->ops[mp->ip].opcode);
 		}
-		++mp->ip;
 
 		if(mp->posthook)
-			mp->posthook(mp, mp->ops[mp->ip-1].opcode, mp->userptr);
+			mp->posthook(mp, mp->ops[mp->ip].opcode, mp->userptr);
+
+		++mp->ip;
 	}
 }
 
